@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.badlogic.gdx.Gdx.gl;
+import static com.badlogic.gdx.Gdx.*;
 
 public class ThGame extends ApplicationAdapter {
 	SpriteBatch batch;
@@ -56,30 +56,44 @@ public class ThGame extends ApplicationAdapter {
 		renderer = new ShapeRenderer();
 		renderer.setProjectionMatrix(batch.getProjectionMatrix());
 		layout = new GlyphLayout();
+		count=0;
 
 		textureMap.put("bgimg",new Texture("jntm/imgs/enterbg.png"));
 		musicMap.put("ebgm",Gdx.app.getAudio().newMusic(Gdx.files.internal("jntm/audios/ebgm.mp3")));
 		musicMap.get("ebgm").setLooping(true);
 	}
-	public void drawText(String txt,float x,float y,int c){
+	public void drawText(String txt,float x,float y,int c,int size){
 		renderer.begin(ShapeRenderer.ShapeType.Line);
 		batch.setColor(new Color(c));
+		font12.getData().setScale(size,size);
 		font12.draw(batch, txt, x, y);
 		renderer.end();
 	}
+	public int count;
+	public boolean b1;
 	@Override
 	public void render () {
 		ScreenUtils.clear(1, 0, 0, 1);
 		batch.begin();
 		switch (gameStatus){
-			case ENTERING:
-				if (!musicMap.get("ebgm").isPlaying()){
+			case ENTERING: {
+				if (!musicMap.get("ebgm").isPlaying()) {
 					musicMap.get("ebgm").play();
 				}
-				batch.setColor(0.5f,0.5f,0.5f,1);
-				batch.draw(textureMap.get("bgimg"), 0, 0,WindowW,WindowH);
+				batch.setColor(0.5f, 0.5f, 0.5f, 1);
+				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
 
-				drawText("未答dwd复",100,100,0xfcfcfc);
+				drawText(I18n.get("enter.msg"), (float) (125 - 5 + count * .03), (float) (100 - 5 + count * .03), 0xfcfcfc, 2);
+				if (b1) {
+					count++;
+					if (count>500)
+						b1=false;
+				} else {
+					count--;
+					if (count<0)
+						b1=true;
+				}
+			}
 				break;
 		}
 		if (gameStatus!=Game_Status.ENTERING){
