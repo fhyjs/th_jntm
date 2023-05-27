@@ -23,7 +23,7 @@ import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.ScreenUtils;
 
-import javax.imageio.ImageIO;
+import com.badlogic.gdx.Input.Keys;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -48,6 +48,7 @@ public class ThGame extends ApplicationAdapter {
 	public BitmapFont font12;
 	private static final Logger logger=new Logger("Main",Logger.DEBUG);
 	public void ProcessInput(int code, KeyAct act){
+		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
 		switch (gameStatus) {
 			case ENTERING: {
 				if(act==KeyAct.UP) {
@@ -56,6 +57,9 @@ public class ThGame extends ApplicationAdapter {
 				break;
 			}
 		}
+	}
+	public boolean IsDown(int c){
+		return keyMap.containsKey(c) && keyMap.get(c);
 	}
 	@Override
 	public void create () {
