@@ -10,7 +10,12 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.ScreenUtils;
 
@@ -27,7 +32,10 @@ public class ThGame extends ApplicationAdapter {
 	public Game_Status gameStatus;
 	Graphics.Monitor currMonitor;
 	Graphics.DisplayMode displayMode;
+	private GlyphLayout layout;
 	public int WindowW,WindowH;
+	private ShapeRenderer renderer;
+	public BitmapFont font12;
 	private static final Logger logger=new Logger("Main",Logger.DEBUG);
 	@Override
 	public void create () {
@@ -43,12 +51,22 @@ public class ThGame extends ApplicationAdapter {
 		WindowW=Gdx.graphics.getWidth();
 		gameStatus=Game_Status.ENTERING;
 		batch = new SpriteBatch();
+		font12 = new BitmapFont(Gdx.files.internal("jntm/fonts/Hanazono-standard.fnt"),Gdx.files.internal("jntm/fonts/Hanazono-standard.png"),false);
+		font12.getData().markupEnabled=true;
+		renderer = new ShapeRenderer();
+		renderer.setProjectionMatrix(batch.getProjectionMatrix());
+		layout = new GlyphLayout();
 
 		textureMap.put("bgimg",new Texture("jntm/imgs/enterbg.png"));
 		musicMap.put("ebgm",Gdx.app.getAudio().newMusic(Gdx.files.internal("jntm/audios/ebgm.mp3")));
 		musicMap.get("ebgm").setLooping(true);
 	}
-
+	public void drawText(String txt,float x,float y,int c){
+		renderer.begin(ShapeRenderer.ShapeType.Line);
+		batch.setColor(new Color(c));
+		font12.draw(batch, txt, x, y);
+		renderer.end();
+	}
 	@Override
 	public void render () {
 		ScreenUtils.clear(1, 0, 0, 1);
@@ -60,6 +78,8 @@ public class ThGame extends ApplicationAdapter {
 				}
 				batch.setColor(0.5f,0.5f,0.5f,1);
 				batch.draw(textureMap.get("bgimg"), 0, 0,WindowW,WindowH);
+
+				drawText("未答dwd复",100,100,0xfcfcfc);
 				break;
 		}
 		if (gameStatus!=Game_Status.ENTERING){
