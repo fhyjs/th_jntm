@@ -139,6 +139,12 @@ public class ThGame extends ApplicationAdapter {
 				}
 				break;
 			}
+			case MENU:{
+				batch.setColor(0.6f, 0.6f, 0.6f, 1);
+				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
+				drawText(I18n.get("game.name"), (float) (100 - 5 + count * .03), (float) (450 - 5 + count * .03), 0xfcfcfc, 5f);
+				break;
+			}
 			case Changing:{
 				if (textureMap.containsKey("change")&&textureMap.get("change")!=null) {
 					batch.setColor(((float) 70-count) /70, ((float) 70-count) /70, ((float) 70-count) /70, 1);
