@@ -143,7 +143,7 @@ public class ThGame extends ApplicationAdapter {
 				if (textureMap.containsKey("change")&&textureMap.get("change")!=null) {
 					batch.setColor(((float) 70-count) /70, ((float) 70-count) /70, ((float) 70-count) /70, 1);
 					Sprite sprite = new Sprite(textureMap.get("change"));
-					sprite.flip(true, true);
+					sprite.flip(false, true);
 					batch.draw(sprite, 0, 0, WindowW, WindowH);
 					count++;
 				}
