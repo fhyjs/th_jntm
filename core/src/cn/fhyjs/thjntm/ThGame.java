@@ -47,17 +47,6 @@ public class ThGame extends ApplicationAdapter {
 	private ShapeRenderer renderer;
 	public BitmapFont font12;
 	private static final Logger logger=new Logger("Main",Logger.DEBUG);
-	public void ProcessInput(int code, KeyAct act){
-		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
-		switch (gameStatus) {
-			case ENTERING: {
-				if(act==KeyAct.UP) {
-					ChanageGS(Game_Status.MENU);
-				}
-				break;
-			}
-		}
-	}
 	public boolean IsDown(int c){
 		return keyMap.containsKey(c) && keyMap.get(c);
 	}
@@ -99,7 +88,7 @@ public class ThGame extends ApplicationAdapter {
 	public int count;
 	public boolean b1;
 	public void ChanageGS(Game_Status to) {
-		textureMap.put("change", new Texture(FlipPixmap(takeScreen())));
+		textureMap.put("change", new Texture(takeScreen()));
 		gameStatus=Game_Status.Changing;
 		new Changer(to).start();
 	}
@@ -110,6 +99,17 @@ public class ThGame extends ApplicationAdapter {
 			default:
 				count=0;
 				break;
+		}
+	}
+	public void ProcessInput(int code, KeyAct act){
+		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
+		switch (gameStatus) {
+			case ENTERING: {
+				if(act==KeyAct.UP) {
+					ChanageGS(Game_Status.MENU);
+				}
+				break;
+			}
 		}
 	}
 	@Override
