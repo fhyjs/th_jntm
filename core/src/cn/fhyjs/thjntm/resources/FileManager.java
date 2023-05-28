@@ -3,6 +3,7 @@ package cn.fhyjs.thjntm.resources;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.Logger;
 
+import javax.swing.*;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -16,24 +17,26 @@ import java.util.stream.Collectors;
 public class FileManager {
     private static final Logger logger=new Logger("FileManager");
     public static List<String> readAllResFiles(String domain,String path1) throws IOException {
-        FileSystem filesystem = null;
         try {
-            URL url = Gdx.files.internal("assets/"+domain+"/.jiassetsroot").file().toURL();
-
+            FileSystem filesystem = null;
+            URL url = FileManager.class.getClassLoader().getResource(domain+"/.jiassetsroot");
+            //JOptionPane.showMessageDialog(null,url);
             if (url != null) {
                 URI uri = url.toURI();
                 Path path;
 
                 if ("file".equals(uri.getScheme())) {
-                    path = Paths.get(Gdx.files.internal("assets/"+domain+"/"+path1).file().toURI());
+                    if(FileManager.class.getClassLoader().getResource(domain + "/" + path1).getPath().charAt(0)=='/')
+                        path = Paths.get(FileManager.class.getClassLoader().getResource(domain + "/" + path1).getPath().substring(1));
+                    else
+                        path = Paths.get(FileManager.class.getClassLoader().getResource(domain + "/" + path1).getPath());
                 } else {
                     if (!"jar".equals(uri.getScheme())) {
                         logger.error("Unsupported scheme " + uri + " trying to list all recipes");
                         return null;
                     }
-
-                    filesystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
-                    path = filesystem.getPath("/assets/"+domain+"/"+path1);
+                    filesystem=FileSystems.newFileSystem(uri, Collections.emptyMap());
+                    path = filesystem.getPath("/"+domain+"/"+path1);
                 }
 
                 List<Path> list = Files.walk(path).collect(Collectors.toList());
@@ -44,6 +47,7 @@ public class FileManager {
                         continue;
                     listS.add(p.toString());
                 }
+                if (filesystem!=null && filesystem.isOpen()) filesystem.close();
                 return listS;
             }
         }catch (Throwable e){
@@ -68,16 +72,25 @@ public class FileManager {
         return t;
     }
     public static String getTemplateContent(String fn) throws Exception{
-        File file = new File(fn);
-        if(!file.exists()){
-            return null;
+        if (fn.charAt(0)=='/')
+            fn=fn.substring(1);
+        URL url = FileManager.class.getClassLoader().getResource(fn);
+        if (url==null) {
+            File file = new File(fn);
+            if (!file.exists()) {
+                return null;
+            }
+            FileInputStream inputStream = new FileInputStream(file);
+            int length = inputStream.available();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+            inputStream.close();
+            return new String(bytes, StandardCharsets.UTF_8);
         }
-        FileInputStream inputStream = new FileInputStream(file);
-        int length = inputStream.available();
-        byte[] bytes = new byte[length];
-        inputStream.read(bytes);
-        inputStream.close();
-        return new String(bytes, StandardCharsets.UTF_8);
+        FileSystem filesystem = FileSystems.newFileSystem(url.toURI(), Collections.emptyMap());
+        Path path = filesystem.getPath(fn);
+        Files.readAllBytes(path);
+        return new String(Files.readAllBytes(path),StandardCharsets.UTF_8);
     }
     public static String getJarPath() throws URISyntaxException {
         File jarFile = new File(FileManager.class.getProtectionDomain().getCodeSource().getLocation().toURI());

@@ -2,37 +2,30 @@ package cn.fhyjs.thjntm;
 
 import cn.fhyjs.thjntm.enums.Game_Status;
 import cn.fhyjs.thjntm.enums.KeyAct;
-import cn.fhyjs.thjntm.resources.FileManager;
+import cn.fhyjs.thjntm.enums.ResType;
 import cn.fhyjs.thjntm.resources.I18n;
+import cn.fhyjs.thjntm.util.ProgressBar;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import com.badlogic.gdx.Input.Keys;
-import javax.imageio.stream.ImageInputStream;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
+
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.badlogic.gdx.Gdx.*;
 
 public class ThGame extends ApplicationAdapter {
 	SpriteBatch batch;
@@ -49,6 +42,21 @@ public class ThGame extends ApplicationAdapter {
 	private static final Logger logger=new Logger("Main",Logger.DEBUG);
 	public boolean IsDown(int c){
 		return keyMap.containsKey(c) && keyMap.get(c);
+	}
+    public Map<ResType,Map<String,Object>> RegRes(){
+        Map<ResType,Map<String,Object>> resm = new HashMap<>();
+        Map<String,Object> music = new HashMap<>();
+        Map<String,Object> texture = new HashMap<>();
+
+        texture.put("bgimg","jntm/imgs/enterbg.png");
+        music.put("ebgm",Gdx.files.internal("jntm/audios/ebgm.mp3"));
+
+        resm.put(ResType.MUSIC,music);
+        resm.put(ResType.TEXTURE,texture);
+        return resm;
+    }
+	private void SetResProp(){
+		musicMap.get("ebgm").setLooping(true);
 	}
 	@Override
 	public void create () {
@@ -72,11 +80,30 @@ public class ThGame extends ApplicationAdapter {
 		count=0;
 		ThInputProcessor inputProcessor = new ThInputProcessor();
 		Gdx.input.setInputProcessor(inputProcessor);
-
-		textureMap.put("bgimg",new Texture("jntm/imgs/enterbg.png"));
-		musicMap.put("ebgm",Gdx.app.getAudio().newMusic(Gdx.files.internal("jntm/audios/ebgm.mp3")));
-		musicMap.get("ebgm").setLooping(true);
-
+		{
+			Map<ResType, Map<String, Object>> resm = RegRes();
+			for (int i = 0; i < resm.size(); i++) {
+				ProgressBar pb = new ProgressBar("pb", "running");
+				pb.start();
+				pb.jf.setTitle(I18n.get("proc.res.name"));
+				pb.txt1.setText(I18n.get("proc." + resm.keySet().toArray()[i].toString() + ".name"));
+				Map<String, Object> cmap = resm.get(resm.keySet().toArray()[i]);
+				ResType ctype = (ResType) resm.keySet().toArray()[i];
+				for (int j = 0; j < cmap.size(); j++) {
+					String name = (String) cmap.keySet().toArray()[j];
+					if (ctype == ResType.MUSIC) {
+						FileHandle file = (FileHandle) cmap.get(name);
+						musicMap.put(name, Gdx.app.getAudio().newMusic(file));
+					}
+					if (ctype == ResType.TEXTURE) {
+						String file = (String) cmap.get(name);
+						textureMap.put(name, new Texture(file));
+					}
+					pb.progress = (j+1) / cmap.size() * 100;
+				}
+			}
+		}//注册
+		SetResProp();
 	}
 	public void drawText(String txt,float x,float y,int c,float size){
 		renderer.begin(ShapeRenderer.ShapeType.Line);
@@ -140,9 +167,22 @@ public class ThGame extends ApplicationAdapter {
 				break;
 			}
 			case MENU:{
+                if (!musicMap.get("ebgm").isPlaying()) {
+                    musicMap.get("ebgm").play();
+                }
 				batch.setColor(0.6f, 0.6f, 0.6f, 1);
 				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
 				drawText(I18n.get("game.name"), (float) (100 - 5 + count * .03), (float) (450 - 5 + count * .03), 0xfcfcfc, 5f);
+                if (b1) {
+                    count++;
+                    if (count>500)
+                        b1=false;
+                } else {
+                    count--;
+                    if (count<0)
+                        b1=true;
+
+                }
 				break;
 			}
 			case Changing:{
@@ -156,7 +196,7 @@ public class ThGame extends ApplicationAdapter {
 				break;
 			}
 		}
-		if (gameStatus!=Game_Status.ENTERING){
+		if (gameStatus!=Game_Status.ENTERING&&gameStatus!=Game_Status.MENU){
 			musicMap.get("ebgm").stop();
 		}
 		batch.setColor(Color.WHITE);

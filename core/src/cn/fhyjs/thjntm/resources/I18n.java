@@ -28,6 +28,7 @@ public class I18n
                 langs_table.put(lang_name,tm);
             }
         } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
     public static String get(String translateKey)
