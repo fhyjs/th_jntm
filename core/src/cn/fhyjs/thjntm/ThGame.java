@@ -137,6 +137,9 @@ public class ThGame extends ApplicationAdapter {
 				}
 				break;
 			}
+			case MENU:{
+
+			}
 		}
 	}
 	@Override
