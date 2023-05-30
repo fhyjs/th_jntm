@@ -202,7 +202,8 @@ public class ThGame extends ApplicationAdapter {
 		for (Music m:bgmMap.keySet()){
 			List<Game_Status> gameStatuses=bgmMap.get(m);
 			if(gameStatuses.contains(Cgs)){
-				m.play();
+				if (!m.isPlaying())
+					m.play();
 				return;
 			}
 		}
