@@ -24,25 +24,26 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.Input.Keys;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ThGame extends ApplicationAdapter {
 	SpriteBatch batch;
-	public Map<String,Texture> textureMap = new HashMap<>();
+	public Map<String, Texture> textureMap = new HashMap<>();
 	public Map<String, Music> musicMap = new HashMap<>();
-	public Map<Integer,Boolean> keyMap = new HashMap<>();
-	public Game_Status gameStatus,oGS;
+	public Map<Music, List<Game_Status>> bgmMap = new HashMap<>();
+	public Map<Integer, Boolean> keyMap = new HashMap<>();
+	public Game_Status gameStatus, oGS;
 	Graphics.Monitor currMonitor;
 	Graphics.DisplayMode displayMode;
 	private GlyphLayout layout;
-	public int WindowW,WindowH;
+	public int WindowW, WindowH;
 	private ShapeRenderer renderer;
 	public BitmapFont font12;
-	private static final Logger logger=new Logger("Main",Logger.DEBUG);
+	private static final Logger logger = new Logger("Main", Logger.DEBUG);
 	public boolean IsDown(int c){
 		return keyMap.containsKey(c) && keyMap.get(c);
 	}
+
     public Map<ResType,Map<String,Object>> RegRes(){
         Map<ResType,Map<String,Object>> resm = new HashMap<>();
         Map<String,Object> music = new HashMap<>();
@@ -56,7 +57,7 @@ public class ThGame extends ApplicationAdapter {
         return resm;
     }
 	private void SetResProp(){
-		musicMap.get("ebgm").setLooping(true);
+		regbgm("ebgm",Game_Status.ENTERING,Game_Status.MENU);
 	}
 	@Override
 	public void create () {
@@ -149,14 +150,11 @@ public class ThGame extends ApplicationAdapter {
 		batch.begin();
 		switch (gameStatus){
 			case ENTERING: {
-				if (!musicMap.get("ebgm").isPlaying()) {
-					musicMap.get("ebgm").play();
-				}
 				batch.setColor(0.6f, 0.6f, 0.6f, 1);
 				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
 
-				drawText(I18n.get("enter.msg"), (float) (125 - 5 + count * .03), (float) (100 - 5 + count * .03), 0xfcfcfc, 2);
-				drawText(I18n.get("game.name"), (float) (100 - 5 + count * .03), (float) (450 - 5 + count * .03), 0xfcfcfc, 5f);
+				drawText(I18n.get("enter.msg"), (float) (125 - 5 + count * .03), (float) (100 - 5 + count * .03), 0xfcfcfc, 1.5f);
+				drawText(I18n.get("game.name"), (float) (100 - 5 + count * .03), (float) (450 - 5 + count * .03), 0xfcfcfc, 4f);
 				if (b1) {
 					count++;
 					if (count>500)
@@ -170,12 +168,9 @@ public class ThGame extends ApplicationAdapter {
 				break;
 			}
 			case MENU:{
-                if (!musicMap.get("ebgm").isPlaying()) {
-                    musicMap.get("ebgm").play();
-                }
 				batch.setColor(0.6f, 0.6f, 0.6f, 1);
 				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
-				drawText(I18n.get("game.name"), (float) (100 - 5 + count * .03), (float) (450 - 5 + count * .03), 0xfcfcfc, 5f);
+				drawText(I18n.get("game.name"), (float) (85 - 5 + count * .03), (float) (500 - 5 + count * .03), 0xfcfcfc, 4f);
                 if (b1) {
                     count++;
                     if (count>500)
@@ -199,13 +194,27 @@ public class ThGame extends ApplicationAdapter {
 				break;
 			}
 		}
-		if (gameStatus!=Game_Status.ENTERING&&gameStatus!=Game_Status.MENU){
-			musicMap.get("ebgm").stop();
-		}
+		checkbgm(gameStatus);
 		batch.setColor(Color.WHITE);
 		batch.end();
 	}
-
+	public void checkbgm(Game_Status Cgs){
+		for (Music m:bgmMap.keySet()){
+			List<Game_Status> gameStatuses=bgmMap.get(m);
+			if(gameStatuses.contains(Cgs)){
+				m.play();
+				return;
+			}
+		}
+		for (Music m:bgmMap.keySet()){
+			m.stop();
+		}
+	}
+	public void regbgm(String id,Game_Status... where){
+		musicMap.get(id).setLooping(true);
+		List<Game_Status> t = new ArrayList<>(Arrays.asList(where));
+		bgmMap.put(musicMap.get(id),t);
+	}
 	@Override
 	public void dispose () {
 		logger.info("Quiting...");
