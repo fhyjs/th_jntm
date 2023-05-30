@@ -72,7 +72,7 @@ public class ThGame extends ApplicationAdapter {
 		WindowW=Gdx.graphics.getWidth();
 		gameStatus=Game_Status.ENTERING;
 		batch = new SpriteBatch();
-		font12 = new BitmapFont(Gdx.files.internal("jntm/fonts/Hanazono-standard.fnt"),Gdx.files.internal("jntm/fonts/Hanazono-standard.png"),false);
+		font12 = new BitmapFont(Gdx.files.internal("jntm/fonts/msyh/msyh.fnt"),false);
 		font12.getData().markupEnabled=true;
 		renderer = new ShapeRenderer();
 		renderer.setProjectionMatrix(batch.getProjectionMatrix());
