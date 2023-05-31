@@ -6,4 +6,5 @@ public enum Game_Status {
     MENU,
     OPTION,
     ASSETS,
+    TGAME,
 }

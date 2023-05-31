@@ -195,6 +195,7 @@ public class ThGame extends ApplicationAdapter {
 								break;
 							}
 							case 1:{
+								ChanageGS(Game_Status.TGAME,false);
 								break;
 							}
 							case 2:{
@@ -330,6 +331,12 @@ public class ThGame extends ApplicationAdapter {
 				batch.draw(textureMap.get("lanqiu"),65,475-(count*50),30,30);
 				drawText(I18n.get("option.language.zh_cn"),300,400,(Objects.equals(Config.Language, "zh_cn") ?Color.YELLOW:Color.GRAY),1);
 				drawText(I18n.get("option.language.en_us"),450,400,(Objects.equals(Config.Language, "en_us") ?Color.YELLOW:Color.GRAY),1);
+				break;
+			}
+			case TGAME:{
+				gl.glClearColor(0,0,0,1);
+				gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
 				break;
 			}
 			case Changing:{
