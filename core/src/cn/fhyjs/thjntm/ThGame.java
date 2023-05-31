@@ -4,6 +4,7 @@ import cn.fhyjs.thjntm.enums.Game_Status;
 import cn.fhyjs.thjntm.enums.KeyAct;
 import cn.fhyjs.thjntm.enums.ResType;
 import cn.fhyjs.thjntm.resources.I18n;
+import cn.fhyjs.thjntm.util.CUncaughtExceptionHandler;
 import cn.fhyjs.thjntm.util.ProgressBar;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -65,6 +66,7 @@ public class ThGame extends ApplicationAdapter {
 	@Override
 	public void create () {
 		logger.info("Starting...");
+		Thread.setDefaultUncaughtExceptionHandler(new CUncaughtExceptionHandler());
 		I18n.init("zh_cn");
 		try {
 			Config.Sync();
@@ -140,7 +142,13 @@ public class ThGame extends ApplicationAdapter {
 	}
 	public void ProcessInput(int code, KeyAct act){
 		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
-		if (code== Keys.ESCAPE&&act==KeyAct.Down&&gameStatus!=Game_Status.ENTERING){if(gameStatus==Game_Status.MENU&&count==4){Gdx.app.exit();}if (gameStatus==Game_Status.MENU){count=4;return;}ChanageGS(navigation.get(navigation.size()-2),true);navigation.pop();}
+		if(IsDown(Keys.CONTROL_LEFT)&&IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.E)){ throw new RuntimeException("TEST ERROR");}
+		if (code== Keys.ESCAPE&&act==KeyAct.Down&&gameStatus!=Game_Status.ENTERING&&gameStatus!=Game_Status.Changing){
+			if(gameStatus==Game_Status.MENU&&count==4) {Gdx.app.exit();}
+			if (gameStatus==Game_Status.MENU) {count=4;return;}
+			ChanageGS(navigation.get(navigation.size()-2),true);
+			navigation.pop();
+		}
 		switch (gameStatus) {
 			case ENTERING: {
 				if(act==KeyAct.UP) {
