@@ -8,3 +8,5 @@ proc.res.name=处理资源中
 menu.exit=退出
 menu.option=选项
 menu.assets=资产查看
+option.bgmvol=背景音乐音量
+option.sevol=音效音量

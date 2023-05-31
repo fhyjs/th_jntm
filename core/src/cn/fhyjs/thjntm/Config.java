@@ -20,7 +20,11 @@ public class Config {
     private static final Logger logger = new Logger("Config", Logger.DEBUG);
     public static int Input_Up;
     public static int Input_Down;
+    public static int Input_Left;
+    public static int Input_Right;
     public static int Input_Ok;
+    public static int Volume_Bgm;
+    public static int Volume_Se;
     public static void Sync() throws URISyntaxException {
         File file = new File(FileManager.getJarPath() + "config.json");
         if (!file.exists()) {
@@ -28,6 +32,10 @@ public class Config {
             writeFile(file);
         }
         readFile(file);
+    }
+    public static void write() throws URISyntaxException {
+        File file = new File(FileManager.getJarPath() + "config.json");
+        writeFile(file);
     }
     public static void readFile(File file){
         Class<Config> clazz = Config.class;
@@ -88,5 +96,9 @@ public class Config {
         Input_Up= Input.Keys.UP;
         Input_Down= Input.Keys.DOWN;
         Input_Ok= Input.Keys.Z;
+        Volume_Bgm= 70;
+        Volume_Se= 100;
+        Input_Left= Input.Keys.LEFT;
+        Input_Right= Input.Keys.RIGHT;
     }
 }

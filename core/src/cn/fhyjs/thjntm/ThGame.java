@@ -19,6 +19,8 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.ScreenUtils;
 
@@ -27,6 +29,8 @@ import com.badlogic.gdx.Input.Keys;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.*;
+
+import static com.badlogic.gdx.Gdx.gl;
 
 public class ThGame extends ApplicationAdapter {
 	SpriteBatch batch;
@@ -39,11 +43,13 @@ public class ThGame extends ApplicationAdapter {
 	public Map<Integer, Boolean> keyMap = new HashMap<>();
 	public Game_Status gameStatus, oGS;
 	Graphics.Monitor currMonitor;
+	Skin skin;
 	Graphics.DisplayMode displayMode;
 	private GlyphLayout layout;
 	public int WindowW, WindowH;
 	private ShapeRenderer renderer;
 	public BitmapFont font12;
+	Slider slider;
 	private static final Logger logger = new Logger("Main", Logger.DEBUG);
 	public boolean IsDown(int c){
 		return keyMap.containsKey(c) && keyMap.get(c);
@@ -59,6 +65,7 @@ public class ThGame extends ApplicationAdapter {
         music.put("ebgm",Gdx.files.internal("jntm/audios/ebgm.mp3"));
 		sound.put("ji",Gdx.files.internal("jntm/sounds/ji.ogg"));
 		sound.put("niganma",Gdx.files.internal("jntm/sounds/ngm.ogg"));
+		texture.put("lanqiu","jntm/imgs/lanqiu.png");
 
         resm.put(ResType.MUSIC,music);
 		resm.put(ResType.SOUND,sound);
@@ -66,7 +73,7 @@ public class ThGame extends ApplicationAdapter {
         return resm;
     }
 	private void SetResProp(){
-		regbgm("ebgm",Game_Status.ENTERING,Game_Status.MENU);
+		regbgm("ebgm",Game_Status.ENTERING,Game_Status.MENU,Game_Status.OPTION);
 	}
 	@Override
 	public void create () {
@@ -95,7 +102,9 @@ public class ThGame extends ApplicationAdapter {
 		renderer = new ShapeRenderer();
 		renderer.setProjectionMatrix(batch.getProjectionMatrix());
 		layout = new GlyphLayout();
+		skin=new Skin(Gdx.files.internal("jntm/skin/uiskin.json"));
 		count=0;
+		slider = new Slider(0,100,5,false,skin);
 		ThInputProcessor inputProcessor = new ThInputProcessor();
 		Gdx.input.setInputProcessor(inputProcessor);
 		{
@@ -125,6 +134,7 @@ public class ThGame extends ApplicationAdapter {
 			}
 		}//注册
 		SetResProp();
+
 	}
 	public void drawText(String txt,float x,float y,Color c,float size){
 		renderer.begin(ShapeRenderer.ShapeType.Line);
@@ -154,7 +164,7 @@ public class ThGame extends ApplicationAdapter {
 		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
 		if(IsDown(Keys.CONTROL_LEFT)&&IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.E)){ throw new RuntimeException("TEST ERROR");}
 		if (code== Keys.ESCAPE&&act==KeyAct.Down&&gameStatus!=Game_Status.ENTERING&&gameStatus!=Game_Status.Changing){
-			PlaySound("ji",1,1.5f,1);
+			PlaySound("ji",1.5f,1);
 			if(gameStatus==Game_Status.MENU&&count==4) {Gdx.app.exit();}
 			if (gameStatus==Game_Status.MENU) {count=4;return;}
 			ChanageGS(navigation.get(navigation.size()-2),true);
@@ -170,15 +180,15 @@ public class ThGame extends ApplicationAdapter {
 			case MENU:{
 				if (act==KeyAct.Down) {
 					if (code==Config.Input_Up && count > 0) {
-						PlaySound("ji",1);
+						PlaySound("ji");
 						count--;
 					}
 					if (code==Config.Input_Down && count < 4) {
-						PlaySound("ji",1);
+						PlaySound("ji");
 						count++;
 					}
 					if (code==Config.Input_Ok){
-						PlaySound("niganma",1);
+						PlaySound("niganma");
 						switch (count){
 							case 0:{
 
@@ -202,14 +212,56 @@ public class ThGame extends ApplicationAdapter {
 						}
 					}
 				}
+				break;
+			}
+			case OPTION:{
+				if (act==KeyAct.Down) {
+					if (code == Config.Input_Up && count > 0) {
+						PlaySound("ji");
+						count--;
+					}
+					if (code == Config.Input_Down && count < 3) {
+						PlaySound("ji");
+						count++;
+					}
+					switch (count){
+						case 0:{
+							if (code == Config.Input_Left&&Config.Volume_Bgm>0){
+								Config.Volume_Bgm-=5;
+							}
+							if (code == Config.Input_Right&&Config.Volume_Bgm<100){
+								Config.Volume_Bgm+=5;
+							}
+							break;
+						}
+						case 1:{
+							if (code == Config.Input_Left&&Config.Volume_Se>0){
+								Config.Volume_Se-=5;
+							}
+							if (code == Config.Input_Right&&Config.Volume_Se<100){
+								Config.Volume_Se+=5;
+							}
+							break;
+						}
+					}
+
+				}
+				try {
+					Config.write();
+				} catch (URISyntaxException e) {
+					throw new RuntimeException(e);
+				}
+				break;
 			}
 		}
 	}
+
+
 	@Override
 	public void render () {
 		if (gameStatus!=oGS) onSChanaged();
-		Gdx.gl.glClearColor(1, 0, 0, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		gl.glClearColor(1, 0, 0, 1);
+		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		renderer.setProjectionMatrix(camera.combined);
 		batch.begin();
 		switch (gameStatus){
@@ -249,12 +301,22 @@ public class ThGame extends ApplicationAdapter {
 				batch.end();
 
 				renderer.begin(ShapeRenderer.ShapeType.Line);
-				Gdx.gl.glLineWidth(5);
+				gl.glLineWidth(5);
 				renderer.setColor(convertArgbToLibGdxColor(0xd8c6ab,1));
 				renderer.line(0, 530, 600, 530);
 				renderer.end();
 				batch.begin();
 				drawText(I18n.get("menu.option"),30,580,Color.WHITE,2);
+				drawText(I18n.get("option.bgmvol"),100,500,Color.WHITE,1);
+				drawText(I18n.get("option.sevol"),100,450,Color.WHITE,1);
+				slider.setBounds(300, 490, 150, 0);
+				slider.setValue(Config.Volume_Bgm);
+				slider.draw(batch,1);
+				slider.setBounds(300, 430, 150, 20);
+				slider.setValue(Config.Volume_Se);
+				slider.draw(batch,1);
+
+				batch.draw(textureMap.get("lanqiu"),65,475-(count*50),30,30);
 				break;
 			}
 			case Changing:{
@@ -278,6 +340,7 @@ public class ThGame extends ApplicationAdapter {
 			if(gameStatuses.contains(Cgs)){
 				if (!m.isPlaying())
 					m.play();
+				m.setVolume((float) Config.Volume_Bgm /100);
 				return;
 			}
 		}
@@ -317,11 +380,11 @@ public class ThGame extends ApplicationAdapter {
 
 		return pixmap;
 	}
-	public long PlaySound(String id ,float v){
-		return soundMap.get(id).play(v);
+	public long PlaySound(String id){
+		return soundMap.get(id).play((float) Config.Volume_Se /100);
 	}
-	public long PlaySound(String id ,float v,float p,float pan){
-		return soundMap.get(id).play(v,p,pan);
+	public long PlaySound(String id ,float p,float pan){
+		return soundMap.get(id).play((float) Config.Volume_Se /100,p,pan);
 	}
 	public Pixmap FlipPixmap(Pixmap src) {
 		final int width = src.getWidth();
