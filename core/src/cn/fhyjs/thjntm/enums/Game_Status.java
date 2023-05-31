@@ -5,4 +5,5 @@ public enum Game_Status {
     Changing,
     MENU,
     OPTION,
+    ASSETS,
 }

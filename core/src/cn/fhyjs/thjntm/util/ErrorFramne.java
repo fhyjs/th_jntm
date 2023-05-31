@@ -51,6 +51,7 @@ public class ErrorFramne extends JFrame {
 
         //======== this ========
         setTitle("ERROR");
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         Container contentPane = getContentPane();
         contentPane.setLayout(null);
 

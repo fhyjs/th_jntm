@@ -11,10 +11,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -31,10 +30,12 @@ import java.util.*;
 
 public class ThGame extends ApplicationAdapter {
 	SpriteBatch batch;
+	private OrthographicCamera camera;
 	public Map<String, Texture> textureMap = new HashMap<>();
 	public Map<String, Music> musicMap = new HashMap<>();
 	public Stack<Game_Status> navigation = new Stack<>();
 	public Map<Music, List<Game_Status>> bgmMap = new HashMap<>();
+	public Map<String, Sound> soundMap = new HashMap<>();
 	public Map<Integer, Boolean> keyMap = new HashMap<>();
 	public Game_Status gameStatus, oGS;
 	Graphics.Monitor currMonitor;
@@ -51,12 +52,16 @@ public class ThGame extends ApplicationAdapter {
     public Map<ResType,Map<String,Object>> RegRes(){
         Map<ResType,Map<String,Object>> resm = new HashMap<>();
         Map<String,Object> music = new HashMap<>();
+		Map<String,Object> sound = new HashMap<>();
         Map<String,Object> texture = new HashMap<>();
 
         texture.put("bgimg","jntm/imgs/enterbg.png");
         music.put("ebgm",Gdx.files.internal("jntm/audios/ebgm.mp3"));
+		sound.put("ji",Gdx.files.internal("jntm/sounds/ji.ogg"));
+		sound.put("niganma",Gdx.files.internal("jntm/sounds/ngm.ogg"));
 
         resm.put(ResType.MUSIC,music);
+		resm.put(ResType.SOUND,sound);
         resm.put(ResType.TEXTURE,texture);
         return resm;
     }
@@ -85,6 +90,8 @@ public class ThGame extends ApplicationAdapter {
 		batch = new SpriteBatch();
 		font12 = new BitmapFont(Gdx.files.internal("jntm/fonts/msyh/msyh.fnt"),false);
 		font12.getData().markupEnabled=true;
+		camera = new OrthographicCamera();
+		camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		renderer = new ShapeRenderer();
 		renderer.setProjectionMatrix(batch.getProjectionMatrix());
 		layout = new GlyphLayout();
@@ -109,6 +116,9 @@ public class ThGame extends ApplicationAdapter {
 					if (ctype == ResType.TEXTURE) {
 						String file = (String) cmap.get(name);
 						textureMap.put(name, new Texture(file));
+					}
+					if (ctype == ResType.SOUND) {
+						soundMap.put(name, Gdx.audio.newSound((FileHandle) cmap.get(name)));
 					}
 					pb.progress = (j+1) / cmap.size() * 100;
 				}
@@ -144,6 +154,7 @@ public class ThGame extends ApplicationAdapter {
 		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
 		if(IsDown(Keys.CONTROL_LEFT)&&IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.E)){ throw new RuntimeException("TEST ERROR");}
 		if (code== Keys.ESCAPE&&act==KeyAct.Down&&gameStatus!=Game_Status.ENTERING&&gameStatus!=Game_Status.Changing){
+			PlaySound("ji",1,1.5f,1);
 			if(gameStatus==Game_Status.MENU&&count==4) {Gdx.app.exit();}
 			if (gameStatus==Game_Status.MENU) {count=4;return;}
 			ChanageGS(navigation.get(navigation.size()-2),true);
@@ -159,12 +170,15 @@ public class ThGame extends ApplicationAdapter {
 			case MENU:{
 				if (act==KeyAct.Down) {
 					if (code==Config.Input_Up && count > 0) {
+						PlaySound("ji",1);
 						count--;
 					}
 					if (code==Config.Input_Down && count < 4) {
+						PlaySound("ji",1);
 						count++;
 					}
 					if (code==Config.Input_Ok){
+						PlaySound("niganma",1);
 						switch (count){
 							case 0:{
 
@@ -174,6 +188,7 @@ public class ThGame extends ApplicationAdapter {
 								break;
 							}
 							case 2:{
+								ChanageGS(Game_Status.ASSETS,false);
 								break;
 							}
 							case 3:{
@@ -193,7 +208,9 @@ public class ThGame extends ApplicationAdapter {
 	@Override
 	public void render () {
 		if (gameStatus!=oGS) onSChanaged();
-		ScreenUtils.clear(1, 0, 0, 1);
+		Gdx.gl.glClearColor(1, 0, 0, 1);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		renderer.setProjectionMatrix(camera.combined);
 		batch.begin();
 		switch (gameStatus){
 			case ENTERING: {
@@ -224,6 +241,20 @@ public class ThGame extends ApplicationAdapter {
 				drawText(I18n.get("menu.assets"),240,240,convertArgbToLibGdxColor(0xfcfcfc,(count==2?1:0.5f)),(count==2?1.5f:1));
 				drawText(I18n.get("menu.option"),225,200,convertArgbToLibGdxColor(0xfcfcfc,(count==3?1:0.5f)),(count==3?1.5f:1));
 				drawText(I18n.get("menu.exit"),200,160,convertArgbToLibGdxColor(0xfcfcfc,(count==4?1:0.5f)),(count==4?1.5f:1));
+				break;
+			}
+			case OPTION:{
+				batch.setColor(0.6f, 0.6f, 0.6f, 1);
+				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
+				batch.end();
+
+				renderer.begin(ShapeRenderer.ShapeType.Line);
+				Gdx.gl.glLineWidth(5);
+				renderer.setColor(convertArgbToLibGdxColor(0xd8c6ab,1));
+				renderer.line(0, 530, 600, 530);
+				renderer.end();
+				batch.begin();
+				drawText(I18n.get("menu.option"),30,580,Color.WHITE,2);
 				break;
 			}
 			case Changing:{
@@ -260,9 +291,14 @@ public class ThGame extends ApplicationAdapter {
 		bgmMap.put(musicMap.get(id),t);
 	}
 	@Override
+	public void resize(int width, int height) {
+		camera.setToOrtho(false, width, height);
+	}
+	@Override
 	public void dispose () {
 		logger.info("Quiting...");
 		batch.dispose();
+		renderer.dispose();
 		for (Texture t:textureMap.values()){
 			t.dispose();
 		}
@@ -280,6 +316,12 @@ public class ThGame extends ApplicationAdapter {
 		}
 
 		return pixmap;
+	}
+	public long PlaySound(String id ,float v){
+		return soundMap.get(id).play(v);
+	}
+	public long PlaySound(String id ,float v,float p,float pan){
+		return soundMap.get(id).play(v,p,pan);
 	}
 	public Pixmap FlipPixmap(Pixmap src) {
 		final int width = src.getWidth();
