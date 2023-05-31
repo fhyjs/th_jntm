@@ -1,6 +1,8 @@
 package cn.fhyjs.thjntm.resources;
 
 
+import cn.fhyjs.thjntm.Config;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,11 +10,9 @@ import java.util.Map;
 
 public class I18n
 {
-    public static String CurrentLanguage;
     public static List<String> langs=new ArrayList<>();
     public static Map<String,Map<String,String>> langs_table = new HashMap<>();
-    public static void init(String currentLanguage){
-        CurrentLanguage=currentLanguage;
+    public static void init(){
         try {
             langs=FileManager.readAllResFiles("jntm","langs");
             for (String s:langs) {
@@ -34,13 +34,13 @@ public class I18n
     public static String get(String translateKey)
     {
         if(hasKey(translateKey))
-            return langs_table.get(CurrentLanguage).get(translateKey);
+            return langs_table.get(Config.Language).get(translateKey);
         return translateKey;
     }
 
     public static boolean hasKey(String key)
     {
-        return langs_table.get(CurrentLanguage).containsKey(key)&&langs_table.containsKey(CurrentLanguage);
+        return langs_table.get(Config.Language).containsKey(key)&&langs_table.containsKey(Config.Language);
     }
 }
 

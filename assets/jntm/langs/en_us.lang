@@ -1,0 +1,15 @@
+th_jntm.name=Chicken you so beautiful
+enter.msg=Press any key to start the game
+game.name=Chicken you so beautiful
+proc.TEXTURE.name=Registering Texture
+proc.MUSIC.name=Registering Music
+proc.SOUND.name=Registering Sound
+proc.res.name=Processing resources
+menu.exit=exit
+menu.option=option
+menu.assets=assets viewer
+option.bgmvol=bgm vol
+option.sevol=se vol
+option.language=language
+option.language.zh_cn=简体中文
+option.language.en_us=English

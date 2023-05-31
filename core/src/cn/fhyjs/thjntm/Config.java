@@ -25,6 +25,7 @@ public class Config {
     public static int Input_Ok;
     public static int Volume_Bgm;
     public static int Volume_Se;
+    public static String Language;
     public static void Sync() throws URISyntaxException {
         File file = new File(FileManager.getJarPath() + "config.json");
         if (!file.exists()) {
@@ -55,7 +56,7 @@ public class Config {
                         field.set(null,Integer.valueOf(jsonElement.getAsJsonObject().get(name).getAsString()));
                     if (type.equals("float"))
                         field.set(null,Float.valueOf(jsonElement.getAsJsonObject().get(name).getAsString()));
-                    if (type.equals("string"))
+                    if (type.equals("String"))
                         field.set(null,String.valueOf(jsonElement.getAsJsonObject().get(name).getAsString()));
                     if (type.equals("bool"))
                         field.set(null, Boolean.valueOf(jsonElement.getAsJsonObject().get(name).getAsString()));
@@ -100,5 +101,6 @@ public class Config {
         Volume_Se= 100;
         Input_Left= Input.Keys.LEFT;
         Input_Right= Input.Keys.RIGHT;
+        Language= "zh_cn";
     }
 }

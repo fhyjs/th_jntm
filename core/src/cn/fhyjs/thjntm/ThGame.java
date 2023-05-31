@@ -79,12 +79,12 @@ public class ThGame extends ApplicationAdapter {
 	public void create () {
 		logger.info("Starting...");
 		Thread.setDefaultUncaughtExceptionHandler(new CUncaughtExceptionHandler());
-		I18n.init("zh_cn");
 		try {
 			Config.Sync();
 		} catch (URISyntaxException e) {
-			logger.error("Config Core Error!");
+			throw new RuntimeException(e);
 		}
+		I18n.init();
 		currMonitor = Gdx.graphics.getMonitor();
 		displayMode = Gdx.graphics.getDisplayMode(currMonitor);
 		if(Gdx.graphics.supportsDisplayModeChange()) {
@@ -241,6 +241,17 @@ public class ThGame extends ApplicationAdapter {
 							if (code == Config.Input_Right&&Config.Volume_Se<100){
 								Config.Volume_Se+=5;
 							}
+							PlaySound("ji");
+							break;
+						}
+						case 2:{
+							if (code == Config.Input_Left){
+								Config.Language="zh_cn";
+							}
+							if (code == Config.Input_Right){
+								Config.Language="en_us";
+							}
+							PlaySound("ji");
 							break;
 						}
 					}
@@ -309,14 +320,16 @@ public class ThGame extends ApplicationAdapter {
 				drawText(I18n.get("menu.option"),30,580,Color.WHITE,2);
 				drawText(I18n.get("option.bgmvol"),100,500,Color.WHITE,1);
 				drawText(I18n.get("option.sevol"),100,450,Color.WHITE,1);
+				drawText(I18n.get("option.language"),100,400,Color.WHITE,1);
 				slider.setBounds(300, 490, 150, 0);
 				slider.setValue(Config.Volume_Bgm);
 				slider.draw(batch,1);
 				slider.setBounds(300, 430, 150, 20);
 				slider.setValue(Config.Volume_Se);
 				slider.draw(batch,1);
-
 				batch.draw(textureMap.get("lanqiu"),65,475-(count*50),30,30);
+				drawText(I18n.get("option.language.zh_cn"),300,400,(Objects.equals(Config.Language, "zh_cn") ?Color.YELLOW:Color.GRAY),1);
+				drawText(I18n.get("option.language.en_us"),450,400,(Objects.equals(Config.Language, "en_us") ?Color.YELLOW:Color.GRAY),1);
 				break;
 			}
 			case Changing:{
