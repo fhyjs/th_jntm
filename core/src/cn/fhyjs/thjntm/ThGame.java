@@ -8,6 +8,7 @@ import cn.fhyjs.thjntm.util.ProgressBar;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
@@ -23,6 +24,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 
 import com.badlogic.gdx.Input.Keys;
 
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -30,6 +32,7 @@ public class ThGame extends ApplicationAdapter {
 	SpriteBatch batch;
 	public Map<String, Texture> textureMap = new HashMap<>();
 	public Map<String, Music> musicMap = new HashMap<>();
+	public Stack<Game_Status> navigation = new Stack<>();
 	public Map<Music, List<Game_Status>> bgmMap = new HashMap<>();
 	public Map<Integer, Boolean> keyMap = new HashMap<>();
 	public Game_Status gameStatus, oGS;
@@ -63,6 +66,11 @@ public class ThGame extends ApplicationAdapter {
 	public void create () {
 		logger.info("Starting...");
 		I18n.init("zh_cn");
+		try {
+			Config.Sync();
+		} catch (URISyntaxException e) {
+			logger.error("Config Core Error!");
+		}
 		currMonitor = Gdx.graphics.getMonitor();
 		displayMode = Gdx.graphics.getDisplayMode(currMonitor);
 		if(Gdx.graphics.supportsDisplayModeChange()) {
@@ -106,18 +114,19 @@ public class ThGame extends ApplicationAdapter {
 		}//注册
 		SetResProp();
 	}
-	public void drawText(String txt,float x,float y,int c,float size){
+	public void drawText(String txt,float x,float y,Color c,float size){
 		renderer.begin(ShapeRenderer.ShapeType.Line);
-		batch.setColor(new Color(c));
+		font12.setColor(c);
 		font12.getData().setScale(size,size);
 		font12.draw(batch, txt, x, y);
 		renderer.end();
 	}
 	public int count;
 	public boolean b1;
-	public void ChanageGS(Game_Status to) {
+	public void ChanageGS(Game_Status to,boolean noHistory) {
 		textureMap.put("change", new Texture(takeScreen()));
 		gameStatus=Game_Status.Changing;
+		if (!noHistory) navigation.add(to);
 		new Changer(to).start();
 	}
 	public void onSChanaged(){
@@ -131,15 +140,45 @@ public class ThGame extends ApplicationAdapter {
 	}
 	public void ProcessInput(int code, KeyAct act){
 		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
+		if (code== Keys.ESCAPE&&act==KeyAct.Down&&gameStatus!=Game_Status.ENTERING){if(gameStatus==Game_Status.MENU&&count==4){Gdx.app.exit();}if (gameStatus==Game_Status.MENU){count=4;return;}ChanageGS(navigation.get(navigation.size()-2),true);navigation.pop();}
 		switch (gameStatus) {
 			case ENTERING: {
 				if(act==KeyAct.UP) {
-					ChanageGS(Game_Status.MENU);
+					ChanageGS(Game_Status.MENU,false);
 				}
 				break;
 			}
 			case MENU:{
+				if (act==KeyAct.Down) {
+					if (code==Config.Input_Up && count > 0) {
+						count--;
+					}
+					if (code==Config.Input_Down && count < 4) {
+						count++;
+					}
+					if (code==Config.Input_Ok){
+						switch (count){
+							case 0:{
 
+								break;
+							}
+							case 1:{
+								break;
+							}
+							case 2:{
+								break;
+							}
+							case 3:{
+								ChanageGS(Game_Status.OPTION,false);
+								break;
+							}
+							case 4:{
+								Gdx.app.exit();
+								break;
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -153,8 +192,8 @@ public class ThGame extends ApplicationAdapter {
 				batch.setColor(0.6f, 0.6f, 0.6f, 1);
 				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
 
-				drawText(I18n.get("enter.msg"), (float) (125 - 5 + count * .03), (float) (100 - 5 + count * .03), 0xfcfcfc, 1.5f);
-				drawText(I18n.get("game.name"), (float) (100 - 5 + count * .03), (float) (450 - 5 + count * .03), 0xfcfcfc, 4f);
+				drawText(I18n.get("enter.msg"), (float) (125 - 5 + count * .03), (float) (100 - 5 + count * .03), convertArgbToLibGdxColor(0xfcfcfc,1), 1.5f);
+				drawText(I18n.get("game.name"), (float) (100 - 5 + count * .03), (float) (450 - 5 + count * .03), convertArgbToLibGdxColor(0xfcfcfc,1), 4f);
 				if (b1) {
 					count++;
 					if (count>500)
@@ -170,17 +209,13 @@ public class ThGame extends ApplicationAdapter {
 			case MENU:{
 				batch.setColor(0.6f, 0.6f, 0.6f, 1);
 				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
-				drawText(I18n.get("game.name"), (float) (85 - 5 + count * .03), (float) (500 - 5 + count * .03), 0xfcfcfc, 4f);
-                if (b1) {
-                    count++;
-                    if (count>500)
-                        b1=false;
-                } else {
-                    count--;
-                    if (count<0)
-                        b1=true;
+				drawText(I18n.get("game.name"), 85, 500, convertArgbToLibGdxColor(0xfcfcfc,1), 4f);
 
-                }
+				drawText(I18n.get("menu.start1"),210,320,convertArgbToLibGdxColor(0xfcfcfc,(count==0?1:0.5f)),(count==0?1.5f:1));
+				drawText(I18n.get("menu.start2"),230,280,convertArgbToLibGdxColor(0xfcfcfc,(count==1?1:0.5f)),(count==1?1.5f:1));
+				drawText(I18n.get("menu.assets"),240,240,convertArgbToLibGdxColor(0xfcfcfc,(count==2?1:0.5f)),(count==2?1.5f:1));
+				drawText(I18n.get("menu.option"),225,200,convertArgbToLibGdxColor(0xfcfcfc,(count==3?1:0.5f)),(count==3?1.5f:1));
+				drawText(I18n.get("menu.exit"),200,160,convertArgbToLibGdxColor(0xfcfcfc,(count==4?1:0.5f)),(count==4?1.5f:1));
 				break;
 			}
 			case Changing:{
@@ -249,6 +284,12 @@ public class ThGame extends ApplicationAdapter {
 			}
 		}
 		return flipped;
+	}
+	private com.badlogic.gdx.graphics.Color convertArgbToLibGdxColor(int rgbColor,float a) {
+		com.badlogic.gdx.graphics.Color color = new com.badlogic.gdx.graphics.Color();
+		com.badlogic.gdx.graphics.Color.argb8888ToColor(color, rgbColor);
+		color.a=a;
+		return color;
 	}
 	private class Changer extends Thread{
 		Game_Status to;

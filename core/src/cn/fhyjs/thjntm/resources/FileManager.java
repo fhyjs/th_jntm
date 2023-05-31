@@ -171,4 +171,11 @@ public class FileManager {
                     }
                 });
     }
+    public static void writefile(File file,String string) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.write(string);
+        } catch (IOException e) {
+            throw e;
+        }
+    }
 }
