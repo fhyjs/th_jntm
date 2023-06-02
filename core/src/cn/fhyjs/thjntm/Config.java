@@ -26,6 +26,7 @@ public class Config {
     public static int Volume_Bgm;
     public static int Volume_Se;
     public static String Language;
+    public static int FPS;
     public static void Sync() throws URISyntaxException {
         File file = new File(FileManager.getJarPath() + "config.json");
         if (!file.exists()) {
@@ -102,5 +103,6 @@ public class Config {
         Input_Left= Input.Keys.LEFT;
         Input_Right= Input.Keys.RIGHT;
         Language= "zh_cn";
+        FPS=60;
     }
 }

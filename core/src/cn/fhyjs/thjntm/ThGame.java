@@ -91,6 +91,7 @@ public class ThGame extends ApplicationAdapter {
 			Gdx.graphics.setTitle(I18n.get("th_jntm.name"));
 			Gdx.graphics.setResizable(false);
 		}
+		Gdx.graphics.setForegroundFPS(Config.FPS);
 		WindowH=Gdx.graphics.getHeight();
 		WindowW=Gdx.graphics.getWidth();
 		gameStatus=Game_Status.ENTERING;
@@ -255,6 +256,17 @@ public class ThGame extends ApplicationAdapter {
 							PlaySound("ji");
 							break;
 						}
+						case 3:{
+							if (code == Config.Input_Left){
+								Config.FPS=60;
+							}
+							if (code == Config.Input_Right){
+								Config.FPS=30;
+							}
+							Gdx.graphics.setForegroundFPS(Config.FPS);
+							PlaySound("ji");
+							break;
+						}
 					}
 
 				}
@@ -267,8 +279,6 @@ public class ThGame extends ApplicationAdapter {
 			}
 		}
 	}
-
-
 	@Override
 	public void render () {
 		if (gameStatus!=oGS) onSChanaged();
@@ -322,6 +332,7 @@ public class ThGame extends ApplicationAdapter {
 				drawText(I18n.get("option.bgmvol"),100,500,Color.WHITE,1);
 				drawText(I18n.get("option.sevol"),100,450,Color.WHITE,1);
 				drawText(I18n.get("option.language"),100,400,Color.WHITE,1);
+				drawText(I18n.get("option.fps"),100,350,Color.WHITE,1);
 				slider.setBounds(300, 490, 150, 0);
 				slider.setValue(Config.Volume_Bgm);
 				slider.draw(batch,1);
@@ -331,6 +342,8 @@ public class ThGame extends ApplicationAdapter {
 				batch.draw(textureMap.get("lanqiu"),65,475-(count*50),30,30);
 				drawText(I18n.get("option.language.zh_cn"),300,400,(Objects.equals(Config.Language, "zh_cn") ?Color.YELLOW:Color.GRAY),1);
 				drawText(I18n.get("option.language.en_us"),450,400,(Objects.equals(Config.Language, "en_us") ?Color.YELLOW:Color.GRAY),1);
+				drawText("60",400,350,(Config.FPS==60 ?Color.YELLOW:Color.GRAY),1);
+				drawText("30",450,350,(Config.FPS==30 ?Color.YELLOW:Color.GRAY),1);
 				break;
 			}
 			case TGAME:{
@@ -352,6 +365,7 @@ public class ThGame extends ApplicationAdapter {
 		}
 		checkbgm(gameStatus);
 		batch.setColor(Color.WHITE);
+		drawText(String.valueOf(Gdx.graphics.getFramesPerSecond()),570,20,Color.WHITE,0.8f);
 		batch.end();
 	}
 	public void checkbgm(Game_Status Cgs){
