@@ -3,8 +3,10 @@ package cn.fhyjs.thjntm;
 import cn.fhyjs.thjntm.enums.Game_Status;
 import cn.fhyjs.thjntm.enums.KeyAct;
 import cn.fhyjs.thjntm.enums.ResType;
+import cn.fhyjs.thjntm.level.Bullet;
 import cn.fhyjs.thjntm.resources.I18n;
 import cn.fhyjs.thjntm.util.CUncaughtExceptionHandler;
+import cn.fhyjs.thjntm.util.GifDecoder;
 import cn.fhyjs.thjntm.util.ProgressBar;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -14,13 +16,14 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.ScreenUtils;
 
@@ -28,6 +31,7 @@ import com.badlogic.gdx.Input.Keys;
 
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.time.Clock;
 import java.util.*;
 
 import static com.badlogic.gdx.Gdx.gl;
@@ -36,10 +40,13 @@ public class ThGame extends ApplicationAdapter {
 	SpriteBatch batch;
 	private OrthographicCamera camera;
 	public Map<String, Texture> textureMap = new HashMap<>();
+	public Map<String, Animation<TextureRegion>> animationMap = new HashMap<>();
 	public Map<String, Music> musicMap = new HashMap<>();
+	public Map<String, Body> bodyMap = new HashMap<>();
 	public Stack<Game_Status> navigation = new Stack<>();
 	public Map<Music, List<Game_Status>> bgmMap = new HashMap<>();
 	public Map<String, Sound> soundMap = new HashMap<>();
+	World world = new World(new Vector2(0, 0), true);
 	public Map<Integer, Boolean> keyMap = new HashMap<>();
 	public Game_Status gameStatus, oGS;
 	Graphics.Monitor currMonitor;
@@ -47,26 +54,31 @@ public class ThGame extends ApplicationAdapter {
 	Graphics.DisplayMode displayMode;
 	private GlyphLayout layout;
 	public int WindowW, WindowH;
-	private ShapeRenderer renderer;
+	public ShapeRenderer renderer;
 	public BitmapFont font12;
 	Slider slider;
 	private static final Logger logger = new Logger("Main", Logger.DEBUG);
+	private Box2DDebugRenderer debugRenderer;
+
 	public boolean IsDown(int c){
 		return keyMap.containsKey(c) && keyMap.get(c);
 	}
-
     public Map<ResType,Map<String,Object>> RegRes(){
         Map<ResType,Map<String,Object>> resm = new HashMap<>();
         Map<String,Object> music = new HashMap<>();
 		Map<String,Object> sound = new HashMap<>();
         Map<String,Object> texture = new HashMap<>();
+        Map<String,Object> animation = new HashMap<>();
 
-        texture.put("bgimg","jntm/imgs/enterbg.png");
-        music.put("ebgm",Gdx.files.internal("jntm/audios/ebgm.mp3"));
+		texture.put("bgimg","jntm/imgs/enterbg.png");
+		music.put("ebgm",Gdx.files.internal("jntm/audios/ebgm.mp3"));
 		sound.put("ji",Gdx.files.internal("jntm/sounds/ji.ogg"));
 		sound.put("niganma",Gdx.files.internal("jntm/sounds/ngm.ogg"));
 		texture.put("lanqiu","jntm/imgs/lanqiu.png");
+		texture.put("sod3r","jntm/imgs/sod3row.png");
+		animation.put("tsk",Gdx.files.internal("jntm/imgs/tieshankao.gif"));
 
+		resm.put(ResType.ANIMATION,animation);
         resm.put(ResType.MUSIC,music);
 		resm.put(ResType.SOUND,sound);
         resm.put(ResType.TEXTURE,texture);
@@ -95,6 +107,7 @@ public class ThGame extends ApplicationAdapter {
 		WindowH=Gdx.graphics.getHeight();
 		WindowW=Gdx.graphics.getWidth();
 		gameStatus=Game_Status.ENTERING;
+		debugRenderer = new Box2DDebugRenderer(true,true,true,true,true,true);
 		batch = new SpriteBatch();
 		font12 = new BitmapFont(Gdx.files.internal("jntm/fonts/msyh/msyh.fnt"),false);
 		font12.getData().markupEnabled=true;
@@ -130,6 +143,9 @@ public class ThGame extends ApplicationAdapter {
 					if (ctype == ResType.SOUND) {
 						soundMap.put(name, Gdx.audio.newSound((FileHandle) cmap.get(name)));
 					}
+					if (ctype == ResType.ANIMATION) {
+						animationMap.put(name,GifDecoder.loadGIFAnimation(Animation.PlayMode.LOOP, ((FileHandle) cmap.get(name)).read()));
+					}
 					pb.progress = (j+1) / cmap.size() * 100;
 				}
 			}
@@ -145,6 +161,7 @@ public class ThGame extends ApplicationAdapter {
 		renderer.end();
 	}
 	public int count;
+	public Thread thread,thread1;
 	public boolean b1;
 	public void ChanageGS(Game_Status to,boolean noHistory) {
 		textureMap.put("change", new Texture(takeScreen()));
@@ -156,7 +173,31 @@ public class ThGame extends ApplicationAdapter {
 		oGS=gameStatus;
 
 		switch (gameStatus) {
+			case TGAME:{
+				createObject();
+				integerList.clear();
+				integerList.add(0);
+				integerList.add(300);
+				integerList.add(600);
+				thread=new G2BgEffect();
+				thread.start();
+				thread1=new ProcBullet();
+				playerx=300;
+				playery=10;
+				break;
+			}
 			default:
+				try {
+					if (thread1!=null)
+						thread1.interrupt();
+					if (thread!=null)
+						thread.interrupt();
+				}catch (ThreadDeath ignored){}
+				Array<Body> bodies = new Array<>();
+				world.getBodies(bodies);
+				for (Body b : bodies) {
+					world.destroyBody(b);
+				}
 				count=0;
 				break;
 		}
@@ -279,8 +320,21 @@ public class ThGame extends ApplicationAdapter {
 			}
 		}
 	}
+	public void ProcessInput(){
+		switch (gameStatus) {
+			case TGAME:{
+				if (IsDown(Config.Input_Up)&&playery<600) playery+=5;
+				if (IsDown(Config.Input_Down)&&playery>0) playery-=5;
+				if (IsDown(Config.Input_Right)&&playerx<600) playerx+=5;
+				if (IsDown(Config.Input_Left)&&playerx>0) playerx-=5;
+				break;
+			}
+		}
+	}
 	@Override
 	public void render () {
+		ProcessInput();
+		elapsed += Gdx.graphics.getDeltaTime();
 		if (gameStatus!=oGS) onSChanaged();
 		gl.glClearColor(1, 0, 0, 1);
 		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -347,9 +401,20 @@ public class ThGame extends ApplicationAdapter {
 				break;
 			}
 			case TGAME:{
+
 				gl.glClearColor(0,0,0,1);
 				gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+				batch.draw(textureMap.get("sod3r"),-20,integerList.get(0),640,300);
+				batch.draw(textureMap.get("sod3r"),-20,integerList.get(1),640,300);
+				batch.draw(textureMap.get("sod3r"),-20,integerList.get(2),640,300);
 
+				batch.draw(animationMap.get("tsk").getKeyFrame(elapsed),playerx-45,playery-45,100,100);
+				bodyMap.get("pdd").setTransform(playerx,playery,90);
+				batch.end();
+				renderer.begin(ShapeRenderer.ShapeType.Filled);
+				renderer.circle(playerx,playery,5);
+				renderer.end();
+				batch.begin();
 				break;
 			}
 			case Changing:{
@@ -367,6 +432,8 @@ public class ThGame extends ApplicationAdapter {
 		batch.setColor(Color.WHITE);
 		drawText(String.valueOf(Gdx.graphics.getFramesPerSecond()),570,20,Color.WHITE,0.8f);
 		batch.end();
+		debugRenderer.render(world,camera.combined);
+		world.step(1/60f, 6, 2);
 	}
 	public void checkbgm(Game_Status Cgs){
 		for (Music m:bgmMap.keySet()){
@@ -396,6 +463,7 @@ public class ThGame extends ApplicationAdapter {
 		logger.info("Quiting...");
 		batch.dispose();
 		renderer.dispose();
+		world.dispose();
 		for (Texture t:textureMap.values()){
 			t.dispose();
 		}
@@ -420,18 +488,8 @@ public class ThGame extends ApplicationAdapter {
 	public long PlaySound(String id ,float p,float pan){
 		return soundMap.get(id).play((float) Config.Volume_Se /100,p,pan);
 	}
-	public Pixmap FlipPixmap(Pixmap src) {
-		final int width = src.getWidth();
-		final int height = src.getHeight();
-		Pixmap flipped = new Pixmap(width, height, src.getFormat());
-
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
-				flipped.drawPixel(x, y, src.getPixel(width - x - 1, y));
-			}
-		}
-		return flipped;
-	}
+	public List<Integer> integerList = new ArrayList<>();
+	float elapsed,playerx,playery;
 	private com.badlogic.gdx.graphics.Color convertArgbToLibGdxColor(int rgbColor,float a) {
 		com.badlogic.gdx.graphics.Color color = new com.badlogic.gdx.graphics.Color();
 		com.badlogic.gdx.graphics.Color.argb8888ToColor(color, rgbColor);
@@ -458,5 +516,102 @@ public class ThGame extends ApplicationAdapter {
 				}
 			}
 		}
+	}
+	private class G2BgEffect extends Thread{
+		private boolean r=true;
+		public G2BgEffect(){
+			super();
+			r=true;
+		}
+		@Override
+		public void interrupt(){
+			super.interrupt();
+			r=false;
+		}
+		@Override
+		public void run() {
+			while (r) {
+				for (int i = 0; i < integerList.size(); i++) {
+					integerList.set(i, integerList.get(i) - 1);
+					if (integerList.get(i) < -300) {
+						integerList.set(i, integerList.get(i)+900);
+					}
+				}
+				try {
+					sleep(50);
+				} catch (InterruptedException ignored) {}
+			}
+		}
+	}
+	private class ProcBullet extends Thread{
+		private boolean r=true;
+		public ProcBullet(){
+			super();
+			r=true;
+		}
+		@Override
+		public void interrupt(){
+			super.interrupt();
+			r=false;
+		}
+		@Override
+		public void run() {
+			while (r) {
+				for (Bullet bullet:bullets){
+					Body body = bodyMap.get("BULLET-"+bullet.name);
+					float angle = body.getAngle(); // Body angle in radians.
+					float velX = MathUtils.cos(angle) * bullet.speed; // X-component.
+					float velY = MathUtils.sin(angle) * bullet.speed; // Y-component.
+					body.setLinearVelocity(velX, velY);
+					bullet.x=body.getTransform().getPosition().x;
+					bullet.y=body.getTransform().getPosition().y;
+				}
+				try {
+					sleep(1000/Config.FPS);
+				} catch (InterruptedException ignored) {}
+			}
+		}
+	}
+	public void shoot(float x,float y,float a,float speed,float size,boolean player){
+		bullets.add(new Bullet(speed,x,y,a,size,createCObject(size,"BULLET-"+bullets.size(),x,y)));
+
+	}
+	public List<Bullet> bullets = new ArrayList<>();
+	private void createObject(){
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyDef.BodyType.DynamicBody;
+
+		Body body = world.createBody(bodyDef);
+		CircleShape circle = new CircleShape();
+		circle.setRadius(5f);
+
+		FixtureDef fixtureDef = new FixtureDef();
+		fixtureDef.shape = circle;
+		fixtureDef.density = 0.5f;
+		fixtureDef.friction = 0.4f;
+		fixtureDef.restitution = 0.6f; // Make it bounce a little bit
+
+		Fixture fixture = body.createFixture(fixtureDef);
+		bodyMap.put("pdd",body);
+		circle.dispose();
+	}
+	private String createCObject(float size,String name,float x,float y){
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyDef.BodyType.DynamicBody;
+		bodyDef.position.set(new Vector2(x,y));
+		Body body = world.createBody(bodyDef);
+		CircleShape circle = new CircleShape();
+		circle.setRadius(size);
+
+		FixtureDef fixtureDef = new FixtureDef();
+		fixtureDef.shape = circle;
+		fixtureDef.density = 0.5f;
+		fixtureDef.friction = 0.4f;
+		fixtureDef.restitution = 0.6f; // Make it bounce a little bit
+
+		Fixture fixture = body.createFixture(fixtureDef);
+		bodyMap.put(name,body);
+		circle.dispose();
+		return name;
 	}
 }

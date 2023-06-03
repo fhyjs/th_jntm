@@ -4,6 +4,7 @@ game.name=鸡你太美
 proc.TEXTURE.name=注册贴图中
 proc.MUSIC.name=注册音乐中
 proc.SOUND.name=注册音效中
+proc.ANIMATION.name=注册动画中
 proc.res.name=处理资源中
 menu.exit=退出
 menu.option=选项

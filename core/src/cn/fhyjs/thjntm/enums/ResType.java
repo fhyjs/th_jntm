@@ -4,4 +4,5 @@ public enum ResType {
     MUSIC,
     TEXTURE,
     SOUND,
+    ANIMATION,
 }

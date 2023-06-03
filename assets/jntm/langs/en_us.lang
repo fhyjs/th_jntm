@@ -4,6 +4,7 @@ game.name=Chicken you so beautiful
 proc.TEXTURE.name=Registering Texture
 proc.MUSIC.name=Registering Music
 proc.SOUND.name=Registering Sound
+proc.ANIMATION.name=Registering Animation
 proc.res.name=Processing resources
 menu.exit=exit
 menu.option=option
