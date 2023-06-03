@@ -12,6 +12,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
@@ -43,6 +44,7 @@ public class ThGame extends ApplicationAdapter {
 	public Map<String, Animation<TextureRegion>> animationMap = new HashMap<>();
 	public Map<String, Music> musicMap = new HashMap<>();
 	public Map<String, Body> bodyMap = new HashMap<>();
+	public List<Body> RMbody = new ArrayList<>();
 	public Stack<Game_Status> navigation = new Stack<>();
 	public Map<Music, List<Game_Status>> bgmMap = new HashMap<>();
 	public Map<String, Sound> soundMap = new HashMap<>();
@@ -90,6 +92,7 @@ public class ThGame extends ApplicationAdapter {
 	@Override
 	public void create () {
 		logger.info("Starting...");
+
 		Thread.setDefaultUncaughtExceptionHandler(new CUncaughtExceptionHandler());
 		try {
 			Config.Sync();
@@ -174,7 +177,6 @@ public class ThGame extends ApplicationAdapter {
 
 		switch (gameStatus) {
 			case TGAME:{
-				createObject();
 				integerList.clear();
 				integerList.add(0);
 				integerList.add(300);
@@ -182,8 +184,11 @@ public class ThGame extends ApplicationAdapter {
 				thread=new G2BgEffect();
 				thread.start();
 				thread1=new ProcBullet();
+				thread1.start();
 				playerx=300;
 				playery=10;
+				createObject();
+				bodyMap.get("pdd").setTransform(playerx,playery,1.6f);
 				break;
 			}
 			default:
@@ -193,11 +198,11 @@ public class ThGame extends ApplicationAdapter {
 					if (thread!=null)
 						thread.interrupt();
 				}catch (ThreadDeath ignored){}
-				Array<Body> bodies = new Array<>();
-				world.getBodies(bodies);
-				for (Body b : bodies) {
+				for (Body b : bodyMap.values()) {
 					world.destroyBody(b);
 				}
+				bullets.clear();
+				bodyMap.clear();
 				count=0;
 				break;
 		}
@@ -327,15 +332,16 @@ public class ThGame extends ApplicationAdapter {
 				if (IsDown(Config.Input_Down)&&playery>0) playery-=5;
 				if (IsDown(Config.Input_Right)&&playerx<600) playerx+=5;
 				if (IsDown(Config.Input_Left)&&playerx>0) playerx-=5;
+				if (IsDown(Config.Input_Ok)) shoot(playerx,playery,bodyMap.get("pdd").getAngle(),1,10,true);
 				break;
 			}
 		}
 	}
 	@Override
 	public void render () {
-		ProcessInput();
 		elapsed += Gdx.graphics.getDeltaTime();
 		if (gameStatus!=oGS) onSChanaged();
+		ProcessInput();
 		gl.glClearColor(1, 0, 0, 1);
 		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		renderer.setProjectionMatrix(camera.combined);
@@ -408,13 +414,19 @@ public class ThGame extends ApplicationAdapter {
 				batch.draw(textureMap.get("sod3r"),-20,integerList.get(1),640,300);
 				batch.draw(textureMap.get("sod3r"),-20,integerList.get(2),640,300);
 
+				bodyMap.get("pdd").setTransform(playerx,playery,bodyMap.get("pdd").getAngle()	);
 				batch.draw(animationMap.get("tsk").getKeyFrame(elapsed),playerx-45,playery-45,100,100);
-				bodyMap.get("pdd").setTransform(playerx,playery,90);
 				batch.end();
 				renderer.begin(ShapeRenderer.ShapeType.Filled);
 				renderer.circle(playerx,playery,5);
 				renderer.end();
 				batch.begin();
+				int t = bullets.size();
+				for (int i = 0 ;i<t;i++) {
+					Bullet bullet = bullets.get(i);
+					Body body = bodyMap.get(bullet.name);
+					body.setTransform(bullet.x, bullet.y, bullet.a);
+				}
 				break;
 			}
 			case Changing:{
@@ -427,6 +439,11 @@ public class ThGame extends ApplicationAdapter {
 				}
 				break;
 			}
+		}
+		int t = RMbody.size();
+		for (int i = 0 ;i<t;i++) {
+			world.destroyBody(RMbody.get(i));
+			RMbody.remove(i);
 		}
 		checkbgm(gameStatus);
 		batch.setColor(Color.WHITE);
@@ -500,6 +517,7 @@ public class ThGame extends ApplicationAdapter {
 		Game_Status to;
 		public Changer(Game_Status to){
 			super();
+			count=0;
 			this.to=to;
 		}
 		@Override
@@ -557,14 +575,21 @@ public class ThGame extends ApplicationAdapter {
 		@Override
 		public void run() {
 			while (r) {
-				for (Bullet bullet:bullets){
-					Body body = bodyMap.get("BULLET-"+bullet.name);
+				for (int i=0;i<bullets.size();i++){
+					Bullet bullet = bullets.get(i);
+					Body body = bodyMap.get(bullet.name);
+					if (!bullet.name.contains("BULLET-")||body==null)
+						continue;
 					float angle = body.getAngle(); // Body angle in radians.
 					float velX = MathUtils.cos(angle) * bullet.speed; // X-component.
 					float velY = MathUtils.sin(angle) * bullet.speed; // Y-component.
-					body.setLinearVelocity(velX, velY);
-					bullet.x=body.getTransform().getPosition().x;
-					bullet.y=body.getTransform().getPosition().y;
+					bullet.x=bullet.x+velX;
+					bullet.y=bullet.y+velY;
+					if (bullet.x>600||bullet.y>600||bullet.x<0||bullet.y<0){
+						bodyMap.remove(bullet.name);
+						bullets.remove(i);
+						RMbody.add(body);
+					}
 				}
 				try {
 					sleep(1000/Config.FPS);

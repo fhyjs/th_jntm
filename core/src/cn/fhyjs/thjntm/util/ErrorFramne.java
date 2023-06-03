@@ -39,6 +39,10 @@ public class ErrorFramne extends JFrame {
         System.exit(-1);
     }
 
+    private void Con(ActionEvent e) {
+        dispose();
+    }
+
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents  @formatter:off
         scrollPane1 = new JScrollPane();
@@ -48,6 +52,7 @@ public class ErrorFramne extends JFrame {
         button1 = new JButton();
         button2 = new JButton();
         button3 = new JButton();
+        button4 = new JButton();
 
         //======== this ========
         setTitle("ERROR");
@@ -97,6 +102,13 @@ public class ErrorFramne extends JFrame {
         contentPane.add(button3);
         button3.setBounds(135, 425, 200, 30);
 
+        //---- button4 ----
+        button4.setText("Continue");
+        button4.setFont(button4.getFont().deriveFont(button4.getFont().getSize() + 3f));
+        button4.addActionListener(e -> Con(e));
+        contentPane.add(button4);
+        button4.setBounds(340, 425, 130, 30);
+
         {
             // compute preferred size
             Dimension preferredSize = new Dimension();
@@ -124,5 +136,6 @@ public class ErrorFramne extends JFrame {
     private JButton button1;
     private JButton button2;
     private JButton button3;
+    private JButton button4;
     // JFormDesigner - End of variables declaration  //GEN-END:variables  @formatter:on
 }
