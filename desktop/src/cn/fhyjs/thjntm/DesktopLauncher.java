@@ -11,6 +11,6 @@ public class DesktopLauncher {
 		config.setTitle("libgdx_th_jtnm");
 		config.setForegroundFPS(60);
 		config.setWindowedMode(600,600);
-		new Lwjgl3Application(new ThGame(), config);
+		new Lwjgl3Application(new ThGame(arg), config);
 	}
 }

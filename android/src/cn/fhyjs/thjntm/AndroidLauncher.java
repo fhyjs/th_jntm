@@ -14,7 +14,7 @@ public class AndroidLauncher extends AndroidApplication {
 	protected void onCreate (Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
-		initialize(new ThGame(), config);
+		initialize(new ThGame(savedInstanceState.keySet().toArray(new String[]{})), config);
 	}
 	@Override
 	public AndroidAudio createAudio(Context context, AndroidApplicationConfiguration config) {

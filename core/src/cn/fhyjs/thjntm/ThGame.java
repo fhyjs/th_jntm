@@ -4,6 +4,7 @@ import cn.fhyjs.thjntm.enums.Game_Status;
 import cn.fhyjs.thjntm.enums.KeyAct;
 import cn.fhyjs.thjntm.enums.ResType;
 import cn.fhyjs.thjntm.level.Bullet;
+import cn.fhyjs.thjntm.level.Player;
 import cn.fhyjs.thjntm.resources.I18n;
 import cn.fhyjs.thjntm.util.CUncaughtExceptionHandler;
 import cn.fhyjs.thjntm.util.GifDecoder;
@@ -26,6 +27,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Logger;
+import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import com.badlogic.gdx.Input.Keys;
@@ -59,9 +61,25 @@ public class ThGame extends ApplicationAdapter {
 	public ShapeRenderer renderer;
 	public BitmapFont font12;
 	Slider slider;
+	// array containing the active bullets.
+	public final List<Bullet> activeBullets = new ArrayList<Bullet>();
+
+	// bullet pool.
+	private final Pool<Bullet> bulletPool = new Pool<Bullet>() {
+
+		@Override
+		protected Bullet newObject() {
+			return new Bullet();
+		}
+	};
 	private static final Logger logger = new Logger("Main", Logger.DEBUG);
 	private Box2DDebugRenderer debugRenderer;
-
+	public ThGame(String[] arg){
+		super();
+		this.gameStatus=Game_Status.ENTERING;
+		if (arg.length>0)
+			gameStatus=Game_Status.valueOf(arg[0]);
+	}
 	public boolean IsDown(int c){
 		return keyMap.containsKey(c) && keyMap.get(c);
 	}
@@ -109,7 +127,6 @@ public class ThGame extends ApplicationAdapter {
 		Gdx.graphics.setForegroundFPS(Config.FPS);
 		WindowH=Gdx.graphics.getHeight();
 		WindowW=Gdx.graphics.getWidth();
-		gameStatus=Game_Status.ENTERING;
 		debugRenderer = new Box2DDebugRenderer(true,true,true,true,true,true);
 		batch = new SpriteBatch();
 		font12 = new BitmapFont(Gdx.files.internal("jntm/fonts/msyh/msyh.fnt"),false);
@@ -124,6 +141,7 @@ public class ThGame extends ApplicationAdapter {
 		slider = new Slider(0,100,5,false,skin);
 		ThInputProcessor inputProcessor = new ThInputProcessor();
 		Gdx.input.setInputProcessor(inputProcessor);
+
 		{
 			Map<ResType, Map<String, Object>> resm = RegRes();
 			for (int i = 0; i < resm.size(); i++) {
@@ -166,6 +184,7 @@ public class ThGame extends ApplicationAdapter {
 	public int count;
 	public Thread thread,thread1;
 	public boolean b1;
+	public Player player;
 	public void ChanageGS(Game_Status to,boolean noHistory) {
 		textureMap.put("change", new Texture(takeScreen()));
 		gameStatus=Game_Status.Changing;
@@ -185,13 +204,16 @@ public class ThGame extends ApplicationAdapter {
 				thread.start();
 				thread1=new ProcBullet();
 				thread1.start();
-				playerx=300;
-				playery=10;
+				player=new Player(300,10,1.6f);
+				c1=0;
 				createObject();
-				bodyMap.get("pdd").setTransform(playerx,playery,1.6f);
+				bodyMap.get("pdd").setTransform(player.x,player.y,player.a);
+				world.setContactListener(new ThContactListener());
 				break;
 			}
 			default:
+				world.setContactListener(null);
+				activeBullets.clear();
 				try {
 					if (thread1!=null)
 						thread1.interrupt();
@@ -201,7 +223,6 @@ public class ThGame extends ApplicationAdapter {
 				for (Body b : bodyMap.values()) {
 					world.destroyBody(b);
 				}
-				bullets.clear();
 				bodyMap.clear();
 				count=0;
 				break;
@@ -328,17 +349,26 @@ public class ThGame extends ApplicationAdapter {
 	public void ProcessInput(){
 		switch (gameStatus) {
 			case TGAME:{
-				if (IsDown(Config.Input_Up)&&playery<600) playery+=5;
-				if (IsDown(Config.Input_Down)&&playery>0) playery-=5;
-				if (IsDown(Config.Input_Right)&&playerx<600) playerx+=5;
-				if (IsDown(Config.Input_Left)&&playerx>0) playerx-=5;
-				if (IsDown(Config.Input_Ok)) shoot(playerx,playery,bodyMap.get("pdd").getAngle(),1,10,true);
+				if (IsDown(Config.Input_Up)&&player.y<600) player.y+=5;
+				if (IsDown(Config.Input_Down)&&player.y>0) player.y-=5;
+				if (IsDown(Config.Input_Right)&&player.x<600) player.x+=5;
+				if (IsDown(Config.Input_Left)&&player.x>0) player.x-=5;
+				if (IsDown(Config.Input_Ok)&&c1<=0) {shoot(player.x,player.y,player.a,5,10,true);c1=5;}
 				break;
 			}
 		}
 	}
+	int c1;
 	@Override
 	public void render () {
+		int t1=RMbody.size();
+		for (int i = 0 ;i<t1;i++) {
+			if (i>RMbody.size()-1) break;
+			if (RMbody.get(i)==null) continue;
+			world.destroyBody(RMbody.get(i));
+			bodyMap.remove(getKeyByValue(bodyMap,RMbody.get(i)));
+			RMbody.remove(i);
+		}
 		elapsed += Gdx.graphics.getDeltaTime();
 		if (gameStatus!=oGS) onSChanaged();
 		ProcessInput();
@@ -407,25 +437,34 @@ public class ThGame extends ApplicationAdapter {
 				break;
 			}
 			case TGAME:{
-
+				player.update();
 				gl.glClearColor(0,0,0,1);
 				gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 				batch.draw(textureMap.get("sod3r"),-20,integerList.get(0),640,300);
 				batch.draw(textureMap.get("sod3r"),-20,integerList.get(1),640,300);
 				batch.draw(textureMap.get("sod3r"),-20,integerList.get(2),640,300);
 
-				bodyMap.get("pdd").setTransform(playerx,playery,bodyMap.get("pdd").getAngle()	);
-				batch.draw(animationMap.get("tsk").getKeyFrame(elapsed),playerx-45,playery-45,100,100);
+				bodyMap.get("pdd").setTransform(player.x,player.y,player.a);
+				batch.draw(animationMap.get("tsk").getKeyFrame(elapsed),player.x-45,player.y-45,100,100);
 				batch.end();
 				renderer.begin(ShapeRenderer.ShapeType.Filled);
-				renderer.circle(playerx,playery,5);
+				renderer.circle(player.x,player.y,5);
 				renderer.end();
 				batch.begin();
-				int t = bullets.size();
-				for (int i = 0 ;i<t;i++) {
-					Bullet bullet = bullets.get(i);
-					Body body = bodyMap.get(bullet.name);
-					body.setTransform(bullet.x, bullet.y, bullet.a);
+				if (c1>0) c1--;
+				Bullet item;
+				int len = activeBullets.size();
+				for (int i = len; --i >= 0;) {
+					item = activeBullets.get(i);
+					if (item.alive == false) {
+						activeBullets.remove(i);
+						bulletPool.free(item);
+					}
+				}
+				for (Bullet bullet : activeBullets){
+					String name = bullet.name;
+					bodyMap.get(name).setTransform(bullet.x,bullet.y,bullet.a);
+					batch.draw(textureMap.get("lanqiu"),bullet.x-10,bullet.y-10,20,20);
 				}
 				break;
 			}
@@ -440,10 +479,12 @@ public class ThGame extends ApplicationAdapter {
 				break;
 			}
 		}
-		int t = RMbody.size();
-		for (int i = 0 ;i<t;i++) {
-			world.destroyBody(RMbody.get(i));
-			RMbody.remove(i);
+		Array<Body> t = new Array<>();
+		world.getBodies(t);
+		for (int i = 0;i<t.size;i++){
+			if (!bodyMap.containsValue(t.get(i))) {
+				world.destroyBody(t.get(i));
+			}
 		}
 		checkbgm(gameStatus);
 		batch.setColor(Color.WHITE);
@@ -451,6 +492,15 @@ public class ThGame extends ApplicationAdapter {
 		batch.end();
 		debugRenderer.render(world,camera.combined);
 		world.step(1/60f, 6, 2);
+	}
+
+	public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
+		for (Map.Entry<T, E> entry : map.entrySet()) {
+			if (Objects.equals(value, entry.getValue())) {
+				return entry.getKey();
+			}
+		}
+		return null;
 	}
 	public void checkbgm(Game_Status Cgs){
 		for (Music m:bgmMap.keySet()){
@@ -506,7 +556,7 @@ public class ThGame extends ApplicationAdapter {
 		return soundMap.get(id).play((float) Config.Volume_Se /100,p,pan);
 	}
 	public List<Integer> integerList = new ArrayList<>();
-	float elapsed,playerx,playery;
+	float elapsed;
 	private com.badlogic.gdx.graphics.Color convertArgbToLibGdxColor(int rgbColor,float a) {
 		com.badlogic.gdx.graphics.Color color = new com.badlogic.gdx.graphics.Color();
 		com.badlogic.gdx.graphics.Color.argb8888ToColor(color, rgbColor);
@@ -575,22 +625,23 @@ public class ThGame extends ApplicationAdapter {
 		@Override
 		public void run() {
 			while (r) {
-				for (int i=0;i<bullets.size();i++){
-					Bullet bullet = bullets.get(i);
-					Body body = bodyMap.get(bullet.name);
-					if (!bullet.name.contains("BULLET-")||body==null)
-						continue;
-					float angle = body.getAngle(); // Body angle in radians.
-					float velX = MathUtils.cos(angle) * bullet.speed; // X-component.
-					float velY = MathUtils.sin(angle) * bullet.speed; // Y-component.
-					bullet.x=bullet.x+velX;
-					bullet.y=bullet.y+velY;
-					if (bullet.x>600||bullet.y>600||bullet.x<0||bullet.y<0){
-						bodyMap.remove(bullet.name);
-						bullets.remove(i);
-						RMbody.add(body);
+				try {
+					for (Bullet bullet : activeBullets) {
+						if (!bullet.alive) continue;
+						String name = bullet.name;
+						float angle = bullet.a; // Body angle in radians.
+
+						float velX = MathUtils.cos(angle) * bullet.speed; // X-component.
+						float velY = MathUtils.sin(angle) * bullet.speed; // Y-component.
+						bullet.x += velX;
+						bullet.y += velY;
+						if (bullet.x > 600 || bullet.y > 600 || bullet.x < 0 || bullet.y < 0) {
+							bullet.alive = false;
+							RMbody.add(bodyMap.get(name));
+						}
+
 					}
-				}
+				}catch (ConcurrentModificationException ignored){}
 				try {
 					sleep(1000/Config.FPS);
 				} catch (InterruptedException ignored) {}
@@ -598,10 +649,16 @@ public class ThGame extends ApplicationAdapter {
 		}
 	}
 	public void shoot(float x,float y,float a,float speed,float size,boolean player){
-		bullets.add(new Bullet(speed,x,y,a,size,createCObject(size,"BULLET-"+bullets.size(),x,y)));
-
+		Bullet item = bulletPool.obtain();
+		int i=0;
+		for (Bullet bullet:activeBullets){
+			i=Math.max(i,Integer.parseInt(bullet.name.substring(7)));
+		}
+		i++;
+		item.init(speed,x,y,a,size,player,"BULLET-"+i);
+		createCObject(size,item.name,x,y);
+		activeBullets.add(item);
 	}
-	public List<Bullet> bullets = new ArrayList<>();
 	private void createObject(){
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyDef.BodyType.DynamicBody;
