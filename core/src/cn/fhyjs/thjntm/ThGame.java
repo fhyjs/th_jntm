@@ -9,6 +9,7 @@ import cn.fhyjs.thjntm.resources.I18n;
 import cn.fhyjs.thjntm.util.CUncaughtExceptionHandler;
 import cn.fhyjs.thjntm.util.GifDecoder;
 import cn.fhyjs.thjntm.util.ProgressBar;
+import cn.fhyjs.thjntm.util.Ticker;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Graphics;
@@ -172,7 +173,7 @@ public class ThGame extends ApplicationAdapter {
 			}
 		}//注册
 		SetResProp();
-
+        new Ticker();
 	}
 	public void drawText(String txt,float x,float y,Color c,float size){
 		renderer.begin(ShapeRenderer.ShapeType.Line);
@@ -332,6 +333,7 @@ public class ThGame extends ApplicationAdapter {
 							}
 							Gdx.graphics.setForegroundFPS(Config.FPS);
 							PlaySound("ji");
+                            new Ticker();
 							break;
 						}
 					}
