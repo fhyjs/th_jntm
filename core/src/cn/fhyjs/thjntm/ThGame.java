@@ -456,7 +456,7 @@ public class ThGame extends ApplicationAdapter {
 				int len = activeBullets.size();
 				for (int i = len; --i >= 0;) {
 					item = activeBullets.get(i);
-					if (item.alive == false) {
+					if (!item.alive) {
 						activeBullets.remove(i);
 						bulletPool.free(item);
 					}
