@@ -6,6 +6,7 @@ import cn.fhyjs.thjntm.enums.KeyAct;
 import cn.fhyjs.thjntm.enums.ResType;
 import cn.fhyjs.thjntm.interfaces.ITickable;
 import cn.fhyjs.thjntm.level.Bullet;
+import cn.fhyjs.thjntm.level.Enemy;
 import cn.fhyjs.thjntm.level.Player;
 import cn.fhyjs.thjntm.resources.FileManager;
 import cn.fhyjs.thjntm.resources.I18n;
@@ -69,6 +70,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 	Slider slider;
 	// array containing the active bullets.
 	public final List<Bullet> activeBullets = new ArrayList<Bullet>();
+	public final List<Enemy> activeEnemy = new ArrayList<Enemy>();
 	public Screen screen;
 	// bullet pool.
 	private final Pool<Bullet> bulletPool = new Pool<Bullet>() {
@@ -76,6 +78,13 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		@Override
 		protected Bullet newObject() {
 			return new Bullet();
+		}
+	};
+	private final Pool<Enemy> enemyPool = new Pool<Enemy>() {
+
+		@Override
+		protected Enemy newObject() {
+			return new Enemy();
 		}
 	};
 	private static final Logger logger = new Logger("Main", Logger.DEBUG);
@@ -405,7 +414,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				if (IsDown(Config.Input_Down)&&player.y>0) player.y-=5;
 				if (IsDown(Config.Input_Right)&&player.x<600) player.x+=5;
 				if (IsDown(Config.Input_Left)&&player.x>0) player.x-=5;
-				if (IsDown(Config.Input_Ok)&&c1<=0) {shoot(player.x,player.y,player.a,5,10,true);c1=5;}
+				if (IsDown(Config.Input_Ok)&&c1<=0) {shoot(player.x,player.y,player.a,10,10,true);c1=4;}
 				break;
 			}
 		}
@@ -505,19 +514,40 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				renderer.end();
 				batch.begin();
 				if (c1>0) c1--;
-				Bullet item;
 				int len = activeBullets.size();
 				for (int i = len; --i >= 0;) {
-					item = activeBullets.get(i);
+					Bullet item = activeBullets.get(i);
 					if (!item.alive) {
 						activeBullets.remove(i);
 						bulletPool.free(item);
 					}
 				}
+				len = activeEnemy.size();
+				for (int i = len; --i >= 0;) {
+					Enemy item = activeEnemy.get(i);
+					if (!item.alive) {
+						activeEnemy.remove(i);
+						enemyPool.free(item);
+						bodyMap.remove(item.name);
+					}
+				}
+				len = activeEnemy.size();
+				for (int i = len; --i >= 0;) {
+					Enemy item = activeEnemy.get(i);
+					if (!item.alive) {
+						activeEnemy.remove(i);
+						enemyPool.free(item);
+					}
+				}
 				for (Bullet bullet : activeBullets){
 					String name = bullet.name;
 					bodyMap.get(name).setTransform(bullet.x,bullet.y,bullet.a);
-					batch.draw(textureMap.get("lanqiu"),bullet.x-10,bullet.y-10,20,20);
+					batch.draw(textureMap.get("lanqiu"),bullet.x-bullet.size,bullet.y-bullet.size,bullet.size*2,bullet.size*2);
+				}
+				for (Enemy enemy : activeEnemy){
+					String name = enemy.name;
+					bodyMap.get(name).setTransform(enemy.x,enemy.y,enemy.a);
+					//batch.draw(textureMap.get(name),enemy.x-enemy.size/2,enemy.y-enemy.size/2,enemy.size,enemy.size);
 				}
 				break;
 			}
@@ -620,6 +650,13 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		color.a=a;
 		return color;
 	}
+
+	public void delEnemy(String name) {
+		for (Enemy e:activeEnemy)
+			if (Objects.equals(e.name, "ENEMY-"+name))
+				e.alive=false;
+	}
+
 	private class Changer extends Thread{
 		Game_Status to;
 		public Changer(Game_Status to){
@@ -715,6 +752,12 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		item.init(speed,x,y,a,size,player,"BULLET-"+i);
 		createCObject(size,item.name,x,y);
 		activeBullets.add(item);
+	}
+	public void addEnemy(float x,float y,float a,float speed,float size,String name){
+		Enemy item = enemyPool.obtain();
+		item.init(speed,x,y,a,size,"ENEMY-"+name);
+		createCObject(size,item.name,x,y);
+		activeEnemy.add(item);
 	}
 	private void createObject(){
 		BodyDef bodyDef = new BodyDef();
