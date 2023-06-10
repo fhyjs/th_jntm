@@ -87,10 +87,41 @@ public class FileManager {
             inputStream.close();
             return new String(bytes, StandardCharsets.UTF_8);
         }
-        FileSystem filesystem = FileSystems.newFileSystem(url.toURI(), Collections.emptyMap());
+        FileSystem filesystem = null;
+        filesystem = FileSystems.newFileSystem(url.toURI(), Collections.emptyMap());
         Path path = filesystem.getPath(fn);
-        Files.readAllBytes(path);
-        return new String(Files.readAllBytes(path),StandardCharsets.UTF_8);
+        String r = new String(Files.readAllBytes(path),StandardCharsets.UTF_8);
+        if (filesystem.isOpen()) filesystem.close();
+        return r;
+    }
+    public static byte[] getByteContent(String fn) throws Exception{
+        if (fn.charAt(0)=='/')
+            fn=fn.substring(1);
+        fn=fn.replace("\\","/");
+        URL url = FileManager.class.getClassLoader().getResource(fn);
+        URI uri= null;
+        if (url != null) {
+            FileSystem filesystem = null;
+            uri = url.toURI();
+            Path path;
+            if ("file".equals(uri.getScheme())) {
+                if (FileManager.class.getClassLoader().getResource(fn).getPath().charAt(0) == '/')
+                    path = Paths.get(FileManager.class.getClassLoader().getResource(fn).getPath().substring(1));
+                else
+                    path = Paths.get(FileManager.class.getClassLoader().getResource(fn).getPath());
+            } else {
+                if (!"jar".equals(uri.getScheme())) {
+                    logger.error("Unsupported scheme " + uri + " trying to list all recipes");
+                    return null;
+                }
+                filesystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
+                path = filesystem.getPath(fn);
+            }
+            byte[] r = Files.readAllBytes(path);
+            if (filesystem!=null&&filesystem.isOpen()) filesystem.close();
+            return r;
+        }
+        return null;
     }
     public static String getJarPath() throws URISyntaxException {
         File jarFile = new File(FileManager.class.getProtectionDomain().getCodeSource().getLocation().toURI());

@@ -1,6 +1,7 @@
 package cn.fhyjs.thjntm.util;
 
 import cn.fhyjs.thjntm.Config;
+import cn.fhyjs.thjntm.ThGame;
 import cn.fhyjs.thjntm.interfaces.ITickable;
 
 import java.util.ArrayList;
@@ -9,8 +10,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 public class Ticker {
     public static List<ITickable> l=new ArrayList<>();
-    private static Timer timer=null;
-    public void AddTickAble(ITickable tickable){
+    private static Timer timer;
+
+    public static void AddTickAble(ITickable tickable){
         l.add(tickable);
     }
     public Ticker(){

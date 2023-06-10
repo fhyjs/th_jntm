@@ -4,7 +4,9 @@ package cn.fhyjs.thjntm.util;
 /* Released under Apache 2.0 */
 /* https://code.google.com/p/animated-gifs-in-android/ */
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Vector;
 
 import com.badlogic.gdx.graphics.Pixmap;
@@ -479,7 +481,7 @@ public class GifDecoder {
                 int b = ((int) c[j++]) & 0xff;
                 tab[i++] = 0xff000000 | (r << 16) | (g << 8) | b;
             }
-        }
+        };
         return tab;
     }
 
@@ -584,7 +586,7 @@ public class GifDecoder {
         // table size
         interlace = (packed & 0x40) != 0;
         if (lctFlag) {
-            lct = readColorTable(lctSize); // read table
+            lct = readColorTable(lctSize); // read table.
             act = lct; // make local table active
         } else {
             act = gct; // make global table active
@@ -729,8 +731,9 @@ public class GifDecoder {
         return result;
     }
 
-    public static Animation<TextureRegion> loadGIFAnimation(Animation.PlayMode playMode, InputStream is) {
+    public static Animation<TextureRegion> loadGIFAnimation(Animation.PlayMode playMode, byte[] ib) {
         GifDecoder gdec = new GifDecoder();
+        InputStream is = new ByteArrayInputStream(ib);
         gdec.read(is);
         return gdec.getAnimation(playMode);
     }

@@ -142,6 +142,7 @@ project(":core") {
 
 
     dependencies {
+        implementation 'commons-cli:commons-cli:1.5.0'
         implementation 'com.google.code.gson:gson:2.10.1'
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"

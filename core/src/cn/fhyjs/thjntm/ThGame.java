@@ -3,8 +3,10 @@ package cn.fhyjs.thjntm;
 import cn.fhyjs.thjntm.enums.Game_Status;
 import cn.fhyjs.thjntm.enums.KeyAct;
 import cn.fhyjs.thjntm.enums.ResType;
+import cn.fhyjs.thjntm.interfaces.ITickable;
 import cn.fhyjs.thjntm.level.Bullet;
 import cn.fhyjs.thjntm.level.Player;
+import cn.fhyjs.thjntm.resources.FileManager;
 import cn.fhyjs.thjntm.resources.I18n;
 import cn.fhyjs.thjntm.util.CUncaughtExceptionHandler;
 import cn.fhyjs.thjntm.util.GifDecoder;
@@ -32,7 +34,11 @@ import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 import com.badlogic.gdx.Input.Keys;
+import org.apache.commons.cli.*;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.time.Clock;
@@ -40,8 +46,9 @@ import java.util.*;
 
 import static com.badlogic.gdx.Gdx.gl;
 
-public class ThGame extends ApplicationAdapter {
+public class ThGame extends ApplicationAdapter implements ITickable {
 	SpriteBatch batch;
+	public static boolean IsDevEnv;
 	private OrthographicCamera camera;
 	public Map<String, Texture> textureMap = new HashMap<>();
 	public Map<String, Animation<TextureRegion>> animationMap = new HashMap<>();
@@ -77,9 +84,45 @@ public class ThGame extends ApplicationAdapter {
 	private Box2DDebugRenderer debugRenderer;
 	public ThGame(String[] arg){
 		super();
-		this.gameStatus=Game_Status.ENTERING;
-		if (arg.length>0)
-			gameStatus=Game_Status.valueOf(arg[0]);
+		Options options=new Options();
+		options.addOption(Option
+				.builder("e")
+				.longOpt("enter")
+				.argName("enter")
+				.hasArg()
+				.required(false)
+				.desc("set enter status")
+				.build());
+		options.addOption(Option
+				.builder("h")
+				.longOpt("help")
+				.argName("help")
+				.required(false)
+				.desc("cmd help")
+				.build());
+		options.addOption(Option
+				.builder("d")
+				.longOpt("dev")
+				.argName("dev")
+				.required(false)
+				.desc("dev mode")
+				.build());
+		CommandLine cmd;
+		CommandLineParser parser = new DefaultParser();
+		HelpFormatter helper = new HelpFormatter();
+		try {
+			cmd = parser.parse(options, arg);
+			gameStatus=Game_Status.valueOf(cmd.getOptionValue("e","ENTERING"));
+
+			if (cmd.hasOption("h")) {
+				throw new ParseException("help");
+			}
+			IsDevEnv=cmd.hasOption("d");
+		} catch (ParseException e) {
+			System.out.println(e.getMessage());
+			helper.printHelp("Usage:", options);
+			System.exit(0);
+		}
 	}
 	public boolean IsDown(int c){
 		return keyMap.containsKey(c) && keyMap.get(c);
@@ -98,6 +141,8 @@ public class ThGame extends ApplicationAdapter {
 		texture.put("lanqiu","jntm/imgs/lanqiu.png");
 		texture.put("sod3r","jntm/imgs/sod3row.png");
 		animation.put("tsk",Gdx.files.internal("jntm/imgs/tieshankao.gif"));
+
+		Ticker.AddTickAble(this);
 
 		resm.put(ResType.ANIMATION,animation);
         resm.put(ResType.MUSIC,music);
@@ -166,7 +211,11 @@ public class ThGame extends ApplicationAdapter {
 						soundMap.put(name, Gdx.audio.newSound((FileHandle) cmap.get(name)));
 					}
 					if (ctype == ResType.ANIMATION) {
-						animationMap.put(name,GifDecoder.loadGIFAnimation(Animation.PlayMode.LOOP, ((FileHandle) cmap.get(name)).read()));
+						try {
+							animationMap.put(name,GifDecoder.loadGIFAnimation(Animation.PlayMode.LOOP, FileManager.getByteContent(((FileHandle) cmap.get(name)).file().toPath().toString())));
+						} catch (Exception e) {
+							throw new RuntimeException(e);
+						}
 					}
 					pb.progress = (j+1) / cmap.size() * 100;
 				}
@@ -495,7 +544,10 @@ public class ThGame extends ApplicationAdapter {
 		debugRenderer.render(world,camera.combined);
 		world.step(1/60f, 6, 2);
 	}
+	@Override
+	public void update() {
 
+	}
 	public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
 		for (Map.Entry<T, E> entry : map.entrySet()) {
 			if (Objects.equals(value, entry.getValue())) {
@@ -539,6 +591,7 @@ public class ThGame extends ApplicationAdapter {
 		for (Music t:musicMap.values()){
 			t.dispose();
 		}
+		System.exit(0);
 	}
 	private Pixmap takeScreen() {
 		Pixmap pixmap = Pixmap.createFromFrameBuffer(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight());
