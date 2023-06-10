@@ -1,5 +1,6 @@
 package cn.fhyjs.thjntm;
 
+import cn.fhyjs.thjntm.ctrls.CMain;
 import cn.fhyjs.thjntm.enums.Game_Status;
 import cn.fhyjs.thjntm.enums.KeyAct;
 import cn.fhyjs.thjntm.enums.ResType;
@@ -12,10 +13,7 @@ import cn.fhyjs.thjntm.util.CUncaughtExceptionHandler;
 import cn.fhyjs.thjntm.util.GifDecoder;
 import cn.fhyjs.thjntm.util.ProgressBar;
 import cn.fhyjs.thjntm.util.Ticker;
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
-import com.badlogic.gdx.Input;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
@@ -71,7 +69,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 	Slider slider;
 	// array containing the active bullets.
 	public final List<Bullet> activeBullets = new ArrayList<Bullet>();
-
+	public Screen screen;
 	// bullet pool.
 	private final Pool<Bullet> bulletPool = new Pool<Bullet>() {
 
@@ -259,6 +257,8 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				createObject();
 				bodyMap.get("pdd").setTransform(player.x,player.y,player.a);
 				world.setContactListener(new ThContactListener());
+				ctrl=new CMain(Gdx.files.internal("jntm/ectrl/main.ctr").path());
+				CTick=0;
 				break;
 			}
 			default:
@@ -278,6 +278,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				break;
 		}
 	}
+	public CMain ctrl;
 	public void ProcessInput(int code, KeyAct act){
 		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
 		if(IsDown(Keys.CONTROL_LEFT)&&IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.E)){ throw new RuntimeException("TEST ERROR");}
@@ -409,7 +410,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 			}
 		}
 	}
-	int c1;
+	int c1,CTick;
 	@Override
 	public void render () {
 		int t1=RMbody.size();
@@ -491,6 +492,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				player.update();
 				gl.glClearColor(0,0,0,1);
 				gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+				ctrl.exec(CTick);
 				batch.draw(textureMap.get("sod3r"),-20,integerList.get(0),640,300);
 				batch.draw(textureMap.get("sod3r"),-20,integerList.get(1),640,300);
 				batch.draw(textureMap.get("sod3r"),-20,integerList.get(2),640,300);
@@ -546,7 +548,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 	}
 	@Override
 	public void update() {
-
+		CTick++;
 	}
 	public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
 		for (Map.Entry<T, E> entry : map.entrySet()) {
