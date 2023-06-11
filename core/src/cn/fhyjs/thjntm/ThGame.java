@@ -134,7 +134,8 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 	public boolean IsDown(int c){
 		return keyMap.containsKey(c) && keyMap.get(c);
 	}
-    public Map<ResType,Map<String,Object>> RegRes(){
+    @SuppressWarnings("SuspiciousIndentation")
+	public Map<ResType,Map<String,Object>> RegRes(){
         Map<ResType,Map<String,Object>> resm = new HashMap<>();
         Map<String,Object> music = new HashMap<>();
 		Map<String,Object> sound = new HashMap<>();
@@ -147,8 +148,10 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		sound.put("niganma",Gdx.files.internal("jntm/sounds/ngm.ogg"));
 		texture.put("lanqiu","jntm/imgs/lanqiu.png");
 		texture.put("sod3r","jntm/imgs/sod3row.png");
+		texture.put("ji_icon","jntm/imgs/ji_icon.png");
 		texture.put("missing","jntm/imgs/missing.png");
 		animation.put("tsk",Gdx.files.internal("jntm/imgs/tieshankao.gif"));
+		animation.put("boom",Gdx.files.internal("jntm/imgs/boom.gif"));
 
 		Ticker.AddTickAble(this);
 
@@ -262,7 +265,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				thread.start();
 				thread1=new ProcBullet();
 				thread1.start();
-				player=new Player(300,10,1.6f);
+				player=new Player(300,10,90,5);
 				c1=0;
 				createObject();
 				bodyMap.get("pdd").setTransform(player.x,player.y,player.a);
@@ -289,9 +292,10 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		}
 	}
 	public CMain ctrl;
+	@SuppressWarnings("SuspiciousIndentation")
 	public void ProcessInput(int code, KeyAct act){
 		if(IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.ESCAPE)){ Gdx.app.exit();}
-		if(IsDown(Keys.CONTROL_LEFT)&&IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.E)){ throw new RuntimeException("TEST ERROR");}
+		if(IsDevEnv&&IsDown(Keys.CONTROL_LEFT)&&IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.E)){ throw new RuntimeException("TEST ERROR");}
 		if (code== Keys.ESCAPE&&act==KeyAct.Down&&gameStatus!=Game_Status.ENTERING&&gameStatus!=Game_Status.Changing){
 			PlaySound("ji",1.5f,1);
 			if(gameStatus==Game_Status.MENU&&count==4) {Gdx.app.exit();}
@@ -406,6 +410,10 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				}
 				break;
 			}
+			case TGAME:{
+				if(IsDevEnv&&IsDown(Keys.CONTROL_LEFT)&&IsDown(Keys.SHIFT_LEFT)&&IsDown(Keys.T)){ CTick=0;}
+				break;
+			}
 		}
 	}
 	public void ProcessInput(){
@@ -427,7 +435,6 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		for (int i = 0 ;i<t1;i++) {
 			if (i>RMbody.size()-1) break;
 			if (RMbody.get(i)==null) continue;
-			world.destroyBody(RMbody.get(i));
 			bodyMap.remove(getKeyByValue(bodyMap,RMbody.get(i)));
 			RMbody.remove(i);
 		}
@@ -479,6 +486,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				renderer.setColor(convertArgbToLibGdxColor(0xd8c6ab,1));
 				renderer.line(0, 530, 600, 530);
 				renderer.end();
+				gl.glLineWidth(1);
 				batch.begin();
 				drawText(I18n.get("menu.option"),30,580,Color.WHITE,2);
 				drawText(I18n.get("option.bgmvol"),100,500,Color.WHITE,1);
@@ -508,7 +516,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				batch.draw(getTex("sod3r"),-20,integerList.get(2),640,300);
 
 				bodyMap.get("pdd").setTransform(player.x,player.y,player.a);
-				batch.draw(animationMap.get("tsk").getKeyFrame(elapsed),player.x-45,player.y-45,100,100);
+				player.draw(batch);
 				batch.end();
 				renderer.begin(ShapeRenderer.ShapeType.Filled);
 				renderer.circle(player.x,player.y,5);
@@ -540,15 +548,19 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 						enemyPool.free(item);
 					}
 				}
+				for (Enemy enemy : activeEnemy){
+					String name = enemy.name;
+					bodyMap.get(name).setTransform(enemy.x,enemy.y,enemy.a);
+					batch.draw(getTex(name),enemy.x-enemy.size,enemy.y-enemy.size,enemy.size*2,enemy.size*2);
+				}
 				for (Bullet bullet : activeBullets){
 					String name = bullet.name;
 					bodyMap.get(name).setTransform(bullet.x,bullet.y,bullet.a);
 					batch.draw(getTex(bullet.tex),bullet.x-bullet.size,bullet.y-bullet.size,bullet.size*2,bullet.size*2);
 				}
-				for (Enemy enemy : activeEnemy){
-					String name = enemy.name;
-					bodyMap.get(name).setTransform(enemy.x,enemy.y,enemy.a);
-					//batch.draw(getTex(name),enemy.x-enemy.size/2,enemy.y-enemy.size/2,enemy.size,enemy.size);
+				drawText("Players:",10,580,Color.WHITE,0.9f);
+				for (int i = 0; i < player.lives; i++) {
+					batch.draw(getTex("ji_icon"),100+30*i,560,20,20);
 				}
 				break;
 			}
@@ -577,6 +589,9 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		debugRenderer.render(world,camera.combined);
 		world.step(1/60f, 6, 2);
 		CTick++;
+	}
+	public void over() {
+		System.out.println("over");
 	}
 	@Override
 	public void update() {
@@ -645,7 +660,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		return soundMap.get(id).play((float) Config.Volume_Se /100,p,pan);
 	}
 	public List<Integer> integerList = new ArrayList<>();
-	float elapsed;
+	public float elapsed;
 	private com.badlogic.gdx.graphics.Color convertArgbToLibGdxColor(int rgbColor,float a) {
 		com.badlogic.gdx.graphics.Color color = new com.badlogic.gdx.graphics.Color();
 		com.badlogic.gdx.graphics.Color.argb8888ToColor(color, rgbColor);
@@ -658,7 +673,6 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 			if (Objects.equals(e.name, "ENEMY-"+name))
 				e.alive=false;
 	}
-
 	private class Changer extends Thread{
 		Game_Status to;
 		public Changer(Game_Status to){
@@ -746,6 +760,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 	}
 	public void shoot(float x, float y, float a, float speed, float size, boolean player,String tex){
 		Bullet item = bulletPool.obtain();
+		a= (float) Math.toRadians(a);
 		int i=0;
 		for (Bullet bullet:activeBullets){
 			i=Math.max(i,Integer.parseInt(bullet.name.substring(7)));
@@ -757,6 +772,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 	}
 	public void addEnemy(float x,float y,float a,float speed,float size,String name){
 		Enemy item = enemyPool.obtain();
+		a= (float) Math.toRadians(a);
 		item.init(speed,x,y,a,size,"ENEMY-"+name);
 		createCObject(size,item.name,x,y);
 		activeEnemy.add(item);

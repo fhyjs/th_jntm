@@ -1,3 +1,8 @@
-tick=0;cmd=CE;enemy=gtlb;name=gtlb1;x=300;y=500;a=1;speed=1;size=50
-tick=1;cmd=SD;shooter=gtlb1;type=circle;angle=5;speed=6;size=5;tex=xigua
-tick=100;cmd=DE;name=gtlb1
+tick=0;cmd=CE;enemy=gtlb;name=gtlb1;x=300;y=500;a=0;speed=1;size=50
+tick=1;cmd=SD;shooter=gtlb1;type=circle;angle=10;speed=6;size=5;tex=xigua
+tick=50;cmd=SD;shooter=gtlb1;type=square;size=5;speed=10;tex=xigua;len=100;ivl=20
+tick=70;cmd=SD;shooter=gtlb1;type=square;size=5;speed=10;tex=xigua;len=100;ivl=20
+tick=99;cmd=SD;shooter=gtlb1;type=square;size=50;speed=5;tex=xigua;len=100;ivl=20
+tick=100;cmd=ME;name=gtlb1;x=200;y=400;a=0;speed=3
+tick=200;cmd=ME;name=gtlb1;x=50;y=580;a=0;speed=3
+tick=500;cmd=DE;name=gtlb1

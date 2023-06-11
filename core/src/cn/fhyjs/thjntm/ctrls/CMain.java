@@ -1,5 +1,6 @@
 package cn.fhyjs.thjntm.ctrls;
 
+import cn.fhyjs.thjntm.Config;
 import cn.fhyjs.thjntm.ThGame;
 import cn.fhyjs.thjntm.level.Enemy;
 import cn.fhyjs.thjntm.resources.FileManager;
@@ -64,11 +65,66 @@ public class CMain {
                         }
                         break;
                     }
+                    case "square":{
+                        for (float i = enemy.x-Float.parseFloat(parm.get("len")); i <= enemy.x+Float.parseFloat(parm.get("len")); i+=Float.parseFloat(parm.get("ivl"))) {
+                            game.shoot(i,enemy.y+Float.parseFloat(parm.get("len"))/2,90,Float.parseFloat(parm.get("speed")),Float.parseFloat(parm.get("size")),false,parm.get("tex"));
+                        }
+                        for (float i = enemy.x-Float.parseFloat(parm.get("len")); i <= enemy.x+Float.parseFloat(parm.get("len")); i+=Float.parseFloat(parm.get("ivl"))) {
+                            game.shoot(i,enemy.y-Float.parseFloat(parm.get("len"))/2,-90,Float.parseFloat(parm.get("speed")),Float.parseFloat(parm.get("size")),false,parm.get("tex"));
+                        }
+                        for (float i = enemy.y-Float.parseFloat(parm.get("len")); i <= enemy.y+Float.parseFloat(parm.get("len")); i+=Float.parseFloat(parm.get("ivl"))) {
+                            game.shoot(enemy.x+Float.parseFloat(parm.get("len"))/2,i,0,Float.parseFloat(parm.get("speed")),Float.parseFloat(parm.get("size")),false,parm.get("tex"));
+                        }
+                        for (float i = enemy.y-Float.parseFloat(parm.get("len")); i <= enemy.y+Float.parseFloat(parm.get("len")); i+=Float.parseFloat(parm.get("ivl"))) {
+                            game.shoot(enemy.x-Float.parseFloat(parm.get("len"))/2,i,180,Float.parseFloat(parm.get("speed")),Float.parseFloat(parm.get("size")),false,parm.get("tex"));
+                        }
+                        break;
+                    }
                 }
+                break;
+            }
+            case "ME":{
+                Enemy enemy=getEnemy(parm.get("name"));
+                enemy.a= Float.parseFloat(parm.get("a"));
+                new Me(enemy,Float.parseFloat(parm.get("x")),Float.parseFloat(parm.get("y")),Float.parseFloat(parm.get("speed"))).start();
                 break;
             }
         }
         return true;
+    }
+    private class Me extends Thread{
+        Enemy enemy;float x;float y;float s;
+        boolean xA,yA,xF,yF;
+        public Me(Enemy enemy,float x,float y,float s){
+            super();
+            this.enemy=enemy;this.x=x;this.y=y;this.s=s;
+            xA=enemy.x<x;
+            yA=enemy.y<y;
+        }
+        @Override
+        public void run() {
+            while (!(xF&&yF)){
+                if (xA&&!xF){
+                    enemy.x+=s;
+                    xF=enemy.x>=x;
+                }
+                if (!xA&&!xF){
+                    enemy.x-=s;
+                    xF=enemy.x<=x;
+                }
+                if (yA&&!yF){
+                    enemy.y+=s;
+                    yF=enemy.y>=y;
+                }
+                if (!yA&&!yF){
+                    enemy.y-=s;
+                    yF=enemy.y<=y;
+                }
+                try {
+                    sleep(1000/ Config.FPS);
+                } catch (InterruptedException ignored) {}
+            }
+        }
     }
     private Enemy getEnemy(String name){
         for (Enemy enemy : game.activeEnemy) {

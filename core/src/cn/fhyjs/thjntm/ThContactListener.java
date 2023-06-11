@@ -20,10 +20,15 @@ public class ThContactListener implements ContactListener {
             short playerpos= (short) ((nameM.keySet().toArray()[0]).equals("pdd")?0:1);
             for (String n:nameM.keySet()){
                 if (n.contains("BULLET-")){
-                    Body b= (Body) nameM.values().toArray()[1-playerpos];
                     Bullet a = null;
                     for (Bullet d:activeBullets) if (d.name.equals(n)) a=d;
-                    if (!a.player) ((ThGame) Gdx.app.getApplicationListener()).player.die();
+                    if (a==null) continue;
+                    Body b= ((ThGame) Gdx.app.getApplicationListener()).bodyMap.get(a.name);
+                    if (!a.player){
+                        ((ThGame) Gdx.app.getApplicationListener()).player.die();
+                        a.alive=false;
+                        ((ThGame) Gdx.app.getApplicationListener()).RMbody.add(b);
+                    }
                 }
             }
         }
