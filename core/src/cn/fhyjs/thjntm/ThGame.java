@@ -147,6 +147,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		sound.put("niganma",Gdx.files.internal("jntm/sounds/ngm.ogg"));
 		texture.put("lanqiu","jntm/imgs/lanqiu.png");
 		texture.put("sod3r","jntm/imgs/sod3row.png");
+		texture.put("missing","jntm/imgs/missing.png");
 		animation.put("tsk",Gdx.files.internal("jntm/imgs/tieshankao.gif"));
 
 		Ticker.AddTickAble(this);
@@ -414,7 +415,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				if (IsDown(Config.Input_Down)&&player.y>0) player.y-=5;
 				if (IsDown(Config.Input_Right)&&player.x<600) player.x+=5;
 				if (IsDown(Config.Input_Left)&&player.x>0) player.x-=5;
-				if (IsDown(Config.Input_Ok)&&c1<=0) {shoot(player.x,player.y,player.a,10,10,true);c1=4;}
+				if (IsDown(Config.Input_Ok)&&c1<=0) {shoot(player.x,player.y,player.a,10,10,true,"lanqiu");c1=4;}
 				break;
 			}
 		}
@@ -440,7 +441,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		switch (gameStatus){
 			case ENTERING: {
 				batch.setColor(0.6f, 0.6f, 0.6f, 1);
-				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
+				batch.draw(getTex("bgimg"), 0, 0, WindowW, WindowH);
 
 				drawText(I18n.get("enter.msg"), (float) (125 - 5 + count * .03), (float) (100 - 5 + count * .03), convertArgbToLibGdxColor(0xfcfcfc,1), 1.5f);
 				drawText(I18n.get("game.name"), (float) (100 - 5 + count * .03), (float) (450 - 5 + count * .03), convertArgbToLibGdxColor(0xfcfcfc,1), 4f);
@@ -458,7 +459,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 			}
 			case MENU:{
 				batch.setColor(0.6f, 0.6f, 0.6f, 1);
-				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
+				batch.draw(getTex("bgimg"), 0, 0, WindowW, WindowH);
 				drawText(I18n.get("game.name"), 85, 500, convertArgbToLibGdxColor(0xfcfcfc,1), 4f);
 
 				drawText(I18n.get("menu.start1"),210,320,convertArgbToLibGdxColor(0xfcfcfc,(count==0?1:0.5f)),(count==0?1.5f:1));
@@ -470,7 +471,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 			}
 			case OPTION:{
 				batch.setColor(0.6f, 0.6f, 0.6f, 1);
-				batch.draw(textureMap.get("bgimg"), 0, 0, WindowW, WindowH);
+				batch.draw(getTex("bgimg"), 0, 0, WindowW, WindowH);
 				batch.end();
 
 				renderer.begin(ShapeRenderer.ShapeType.Line);
@@ -490,7 +491,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				slider.setBounds(300, 430, 150, 20);
 				slider.setValue(Config.Volume_Se);
 				slider.draw(batch,1);
-				batch.draw(textureMap.get("lanqiu"),65,475-(count*50),30,30);
+				batch.draw(getTex("lanqiu"),65,475-(count*50),30,30);
 				drawText(I18n.get("option.language.zh_cn"),300,400,(Objects.equals(Config.Language, "zh_cn") ?Color.YELLOW:Color.GRAY),1);
 				drawText(I18n.get("option.language.en_us"),450,400,(Objects.equals(Config.Language, "en_us") ?Color.YELLOW:Color.GRAY),1);
 				drawText("60",400,350,(Config.FPS==60 ?Color.YELLOW:Color.GRAY),1);
@@ -502,9 +503,9 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				gl.glClearColor(0,0,0,1);
 				gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 				ctrl.exec(CTick);
-				batch.draw(textureMap.get("sod3r"),-20,integerList.get(0),640,300);
-				batch.draw(textureMap.get("sod3r"),-20,integerList.get(1),640,300);
-				batch.draw(textureMap.get("sod3r"),-20,integerList.get(2),640,300);
+				batch.draw(getTex("sod3r"),-20,integerList.get(0),640,300);
+				batch.draw(getTex("sod3r"),-20,integerList.get(1),640,300);
+				batch.draw(getTex("sod3r"),-20,integerList.get(2),640,300);
 
 				bodyMap.get("pdd").setTransform(player.x,player.y,player.a);
 				batch.draw(animationMap.get("tsk").getKeyFrame(elapsed),player.x-45,player.y-45,100,100);
@@ -542,19 +543,19 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				for (Bullet bullet : activeBullets){
 					String name = bullet.name;
 					bodyMap.get(name).setTransform(bullet.x,bullet.y,bullet.a);
-					batch.draw(textureMap.get("lanqiu"),bullet.x-bullet.size,bullet.y-bullet.size,bullet.size*2,bullet.size*2);
+					batch.draw(getTex(bullet.tex),bullet.x-bullet.size,bullet.y-bullet.size,bullet.size*2,bullet.size*2);
 				}
 				for (Enemy enemy : activeEnemy){
 					String name = enemy.name;
 					bodyMap.get(name).setTransform(enemy.x,enemy.y,enemy.a);
-					//batch.draw(textureMap.get(name),enemy.x-enemy.size/2,enemy.y-enemy.size/2,enemy.size,enemy.size);
+					//batch.draw(getTex(name),enemy.x-enemy.size/2,enemy.y-enemy.size/2,enemy.size,enemy.size);
 				}
 				break;
 			}
 			case Changing:{
-				if (textureMap.containsKey("change")&&textureMap.get("change")!=null) {
+				if (textureMap.containsKey("change")&&getTex("change")!=null) {
 					batch.setColor(((float) 70-count) /70, ((float) 70-count) /70, ((float) 70-count) /70, 1);
-					Sprite sprite = new Sprite(textureMap.get("change"));
+					Sprite sprite = new Sprite(getTex("change"));
 					sprite.flip(false, true);
 					batch.draw(sprite, 0, 0, WindowW, WindowH);
 					count++;
@@ -575,10 +576,11 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		batch.end();
 		debugRenderer.render(world,camera.combined);
 		world.step(1/60f, 6, 2);
+		CTick++;
 	}
 	@Override
 	public void update() {
-		CTick++;
+
 	}
 	public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
 		for (Map.Entry<T, E> entry : map.entrySet()) {
@@ -742,14 +744,14 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 			}
 		}
 	}
-	public void shoot(float x,float y,float a,float speed,float size,boolean player){
+	public void shoot(float x, float y, float a, float speed, float size, boolean player,String tex){
 		Bullet item = bulletPool.obtain();
 		int i=0;
 		for (Bullet bullet:activeBullets){
 			i=Math.max(i,Integer.parseInt(bullet.name.substring(7)));
 		}
 		i++;
-		item.init(speed,x,y,a,size,player,"BULLET-"+i);
+		item.init(speed,x,y,a,size,player,"BULLET-"+i,tex);
 		createCObject(size,item.name,x,y);
 		activeBullets.add(item);
 	}
@@ -795,5 +797,10 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		bodyMap.put(name,body);
 		circle.dispose();
 		return name;
+	}
+	public Texture getTex(String name){
+		if (textureMap.containsKey(name))
+			return  textureMap.get(name);
+		return textureMap.get("missing");
 	}
 }

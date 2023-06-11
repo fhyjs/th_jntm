@@ -39,11 +39,9 @@ public class Ticker {
     private static class TickTask extends TimerTask {
         @Override
         public void run() {
-            Ticker.pauseTimer();
             for (ITickable tickable : l){
                 tickable.update();
             }
-            Ticker.resumeTimer();
         }
     }
 }

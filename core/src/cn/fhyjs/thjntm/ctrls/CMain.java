@@ -57,7 +57,14 @@ public class CMain {
             }
             case "SD":{
                 Enemy enemy=getEnemy(parm.get("shooter"));
-                game.shoot(enemy.x,enemy.y,enemy.a,Float.parseFloat(parm.get("speed")),Float.parseFloat(parm.get("size")),false);
+                switch (parm.get("type")){
+                    case "circle":{
+                        for (float i = 0; i < 361; i+=Float.parseFloat(parm.get("angle"))) {
+                            game.shoot(enemy.x,enemy.y,i,Float.parseFloat(parm.get("speed")),Float.parseFloat(parm.get("size")),false,parm.get("tex"));
+                        }
+                        break;
+                    }
+                }
                 break;
             }
         }
