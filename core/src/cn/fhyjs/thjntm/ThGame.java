@@ -15,7 +15,6 @@ import cn.fhyjs.thjntm.util.GifDecoder;
 import cn.fhyjs.thjntm.util.ProgressBar;
 import cn.fhyjs.thjntm.util.Ticker;
 import com.badlogic.gdx.*;
-import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
@@ -30,17 +29,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Logger;
 import com.badlogic.gdx.utils.Pool;
-import com.badlogic.gdx.utils.ScreenUtils;
 
 import com.badlogic.gdx.Input.Keys;
 import org.apache.commons.cli.*;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.time.Clock;
 import java.util.*;
 
 import static com.badlogic.gdx.Gdx.gl;
@@ -551,7 +545,7 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 				for (Enemy enemy : activeEnemy){
 					String name = enemy.name;
 					bodyMap.get(name).setTransform(enemy.x,enemy.y,enemy.a);
-					batch.draw(getTex(name),enemy.x-enemy.size,enemy.y-enemy.size,enemy.size*2,enemy.size*2);
+					enemy.draw(batch);
 				}
 				for (Bullet bullet : activeBullets){
 					String name = bullet.name;
@@ -770,10 +764,10 @@ public class ThGame extends ApplicationAdapter implements ITickable {
 		createCObject(size,item.name,x,y);
 		activeBullets.add(item);
 	}
-	public void addEnemy(float x,float y,float a,float speed,float size,String name){
+	public void addEnemy(float x, float y, float a, float speed, float size, String name, String type, int hp){
 		Enemy item = enemyPool.obtain();
 		a= (float) Math.toRadians(a);
-		item.init(speed,x,y,a,size,"ENEMY-"+name);
+		item.init(speed,x,y,a,size,"ENEMY-"+name,type,hp);
 		createCObject(size,item.name,x,y);
 		activeEnemy.add(item);
 	}

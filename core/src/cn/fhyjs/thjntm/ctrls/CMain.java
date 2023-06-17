@@ -4,7 +4,6 @@ import cn.fhyjs.thjntm.Config;
 import cn.fhyjs.thjntm.ThGame;
 import cn.fhyjs.thjntm.level.Enemy;
 import cn.fhyjs.thjntm.resources.FileManager;
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 
 import java.nio.charset.StandardCharsets;
@@ -48,7 +47,9 @@ public class CMain {
                         Float.parseFloat(parm.get("a")),
                         Float.parseFloat(parm.get("speed")),
                         Float.parseFloat(parm.get("size")),
-                        parm.get("name")
+                        parm.get("name"),
+                        parm.get("enemy"),
+                        Integer.parseInt(parm.get("hp"))
                 );
                 break;
             }
